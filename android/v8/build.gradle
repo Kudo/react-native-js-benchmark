@@ -1,6 +1,12 @@
 apply plugin: "com.android.application"
 
 repositories {
+    if (project.hasProperty("V8_DIST_REPO")) {
+        maven {
+            url(project.findProperty("V8_DIST_REPO"))
+        }
+    }
+
     maven {
         url("$rootDir/../node_modules/react-native-v8/dist")
     }

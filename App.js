@@ -1,96 +1,61 @@
 /**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
  * @format
  * @flow
  */
 
-import React, {Fragment} from 'react';
-import {
-  SafeAreaView,
-  StyleSheet,
-  ScrollView,
-  View,
-  Text,
-  StatusBar,
-} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Linking, StyleSheet } from 'react-native';
+import URL from 'url-parse';
 
-import {
-  Header,
-  LearnMoreLinks,
-  Colors,
-  DebugInstructions,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+const ROUTES = {
+  '/RenderComponentThroughput': require('./src/ReactRender/RenderComponentThroughput').default,
+};
+
+const NotFoundView = () => (
+  <View style={styles.notFoundView}>
+    <Text style={styles.notFoundText}>View not found</Text>
+  </View>
+);
 
 const App = () => {
+  const [route, setRoute] = useState(null);
+  useEffect(() => {
+    async function setupInitialRoute() {
+      const initialUrl = await Linking.getInitialURL();
+      if (initialUrl && initialUrl.startsWith('rnbench://')) {
+        const url = new URL(initialUrl, '', true);
+        setRoute(url);
+      }
+    }
+
+    setupInitialRoute();
+  }, []);
+
   return (
-    <Fragment>
-      <StatusBar barStyle="dark-content" />
-      <SafeAreaView>
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          style={styles.scrollView}>
-          <Header />
-          <View style={styles.body}>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Step One</Text>
-              <Text style={styles.sectionDescription}>
-                Edit <Text style={styles.highlight}>App.js</Text> to change this
-                screen and then come back to see your edits.
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>See Your Changes</Text>
-              <Text style={styles.sectionDescription}>
-                <ReloadInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Debug</Text>
-              <Text style={styles.sectionDescription}>
-                <DebugInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Learn More</Text>
-              <Text style={styles.sectionDescription}>
-                Read the docs to discover what to do next:
-              </Text>
-            </View>
-            <LearnMoreLinks />
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    </Fragment>
+    <View style={styles.container}>
+      {route != null && ROUTES[route.pathname] != null ? (
+        React.createElement(ROUTES[route.pathname], route.query)
+      ) : (
+        <NotFoundView />
+      )}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollView: {
-    backgroundColor: Colors.lighter,
+  container: {
+    flex: 1,
   },
-  body: {
-    backgroundColor: Colors.white,
+  notFoundView: {
+    flex: 1,
+    backgroundColor: 'rgb(192, 186, 48)',
+    flexDirection: 'column',
+    justifyContent: 'center',
   },
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: Colors.black,
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-    color: Colors.dark,
-  },
-  highlight: {
-    fontWeight: '700',
+  notFoundText: {
+    color: 'rgb(255, 255, 255)',
+    fontSize: 32,
+    textAlign: 'center',
   },
 });
 

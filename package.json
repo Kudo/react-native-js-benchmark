@@ -8,8 +8,11 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "jsc-android": "^245459.0.0",
     "react": "16.8.6",
-    "react-native": "0.60.0-rc.2"
+    "react-native": "0.60.0-rc.2",
+    "react-native-v8": "^0.60.0-rc.2",
+    "url-parse": "^1.4.7"
   },
   "devDependencies": {
     "@babel/core": "^7.4.5",
