@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import io
 import os
 import re
 import subprocess
@@ -20,6 +21,19 @@ class AdbTool:
     def clear_log(cls):
         os.system('adb logcat -c')
 
+    @classmethod
+    def get_memory(cls, app_id):
+        output = subprocess.check_output([
+            'adb', 'shell', 'dumpsys', 'meminfo',
+            'com.rnbenchmark.{}'.format(app_id)]).decode('utf8')
+
+        with io.StringIO(output) as f:
+            for line in f:
+                if line.find('TOTAL') != -1:
+                    columns = line.split()
+                    if len(columns) >= 8:
+                        return columns[1]
+        return -1
 
     @classmethod
     def stop_app(cls, app_id):
@@ -60,25 +74,40 @@ class RenderComponentThroughput:
             self._app_id,
             '/RenderComponentThroughput?interval={}'.format(self._interval))
         result = AdbTool.wait_for_console_log(r'count=(\d+)').group(1)
-        return result
+        memory = AdbTool.get_memory(self._app_id)
+        return (int(result), int(memory))
+
+    def run_with_average(self, times):
+        ret = {
+            'result': 0,
+            'memory': 0,
+        }
+        for _ in range(times):
+            (result, memory) = self.run()
+            ret['result'] += result
+            ret['memory'] += memory
+
+        # NOTE(kudo): Keeps thing simpler to trim as integer
+        ret['result'] = int(ret['result'] / times)
+        ret['memory'] = int(ret['memory'] / times)
+        return ret
 
 
 def main():
     ApkTool.reinstall('jsc')
     ApkTool.reinstall('v8')
 
-    for _ in range(3):
-        print('=========== RenderComponentThroughput 10s ===========')
-        print('jsc', RenderComponentThroughput('jsc', 10000).run())
-        print('v8', RenderComponentThroughput('v8', 10000).run())
+    print('=========== RenderComponentThroughput 10s ===========')
+    print('jsc', RenderComponentThroughput('jsc', 10000).run_with_average(3))
+    print('v8', RenderComponentThroughput('v8', 10000).run_with_average(3))
 
-        print('=========== RenderComponentThroughput 60s ===========')
-        print('jsc', RenderComponentThroughput('jsc', 60000).run())
-        print('v8', RenderComponentThroughput('v8', 60000).run())
+    print('=========== RenderComponentThroughput 60s ===========')
+    print('jsc', RenderComponentThroughput('jsc', 60000).run_with_average(3))
+    print('v8', RenderComponentThroughput('v8', 60000).run_with_average(3))
 
-        print('=========== RenderComponentThroughput 180s ===========')
-        print('jsc', RenderComponentThroughput('jsc', 180000).run())
-        print('v8', RenderComponentThroughput('v8', 180000).run())
+    print('=========== RenderComponentThroughput 180s ===========')
+    print('jsc', RenderComponentThroughput('jsc', 180000).run_with_average(3))
+    print('v8', RenderComponentThroughput('v8', 180000).run_with_average(3))
 
     return 0
 
