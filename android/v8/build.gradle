@@ -104,7 +104,7 @@ apply from: "../../node_modules/react-native/react.gradle"
  * Upload all the APKs to the Play Store and people will download
  * the correct one based on the CPU architecture of their device.
  */
-def enableSeparateBuildPerCPUArchitecture = false
+def enableSeparateBuildPerCPUArchitecture = true
 
 /**
  * Run Proguard to shrink the Java bytecode in release builds.
@@ -119,6 +119,14 @@ def enableProguardInReleaseBuilds = false
  * Note that this variant is about 6MiB larger per architecture than default.
  */
 def useIntlJsc = false
+
+def includeABIs() {
+    if (project.hasProperty("ABI")) {
+        return project.findProperty("ABI");
+    }
+    def defaultIncludeABIs = ["armeabi-v7a", "x86", "arm64-v8a", "x86_64"] as String[];
+    return defaultIncludeABIs;
+}
 
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -140,7 +148,7 @@ android {
             reset()
             enable enableSeparateBuildPerCPUArchitecture
             universalApk false  // If true, also generate a universal APK
-            include "armeabi-v7a", "x86", "arm64-v8a", "x86_64"
+            include includeABIs()
         }
     }
     signingConfigs {

@@ -54,11 +54,12 @@ class AdbTool:
 
 class ApkTool:
     @classmethod
-    def reinstall(cls, app_id):
+    def reinstall(cls, app_id, abi=None):
         os.chdir('android')
+        abi_prop = '--project-prop ABI={}'.format(abi) if abi else ''
         os.system( \
-'./gradlew :{app}:clean :{app}:uninstallRelease :{app}:installRelease'
-.format(app=app_id))
+'./gradlew {abi_prop} :{app}:clean :{app}:uninstallRelease :{app}:installRelease'
+.format(abi_prop=abi_prop, app=app_id))
         os.chdir('../')
 
 
@@ -94,8 +95,15 @@ class RenderComponentThroughput:
 
 
 def main():
-    ApkTool.reinstall('jsc')
-    ApkTool.reinstall('v8')
+    abi='armeabi-v7a'
+    ApkTool.reinstall('jsc', abi=abi)
+    ApkTool.reinstall('v8', abi=abi)
+
+    print('----------- Benchmark configs -----------')
+    print('ABI: ' + abi or 'default')
+    print('JSC version: ' + '245459.0.0')
+    print('V8 version: ' + '7.5.1')
+    print('\n\n')
 
     print('=========== RenderComponentThroughput 10s ===========')
     print('jsc', RenderComponentThroughput('jsc', 10000).run_with_average(3))
