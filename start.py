@@ -1,8 +1,18 @@
 #!/usr/bin/env python
+import argparse
+import glob
 import io
+import logging
 import os
 import re
 import subprocess
+import sys
+import tempfile
+
+ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
+
+logger = logging.getLogger(__name__)
+
 
 class AdbTool:
     @classmethod
@@ -47,19 +57,22 @@ class AdbTool:
 
     @classmethod
     def start_with_link(cls, app_id, path_with_query):
-        os.system( \
+        os.system(
 'adb shell am start -a android.intent.action.VIEW -d "rnbench://{}{}"' \
 ' > /dev/null'
 .format(app_id, path_with_query))
 
 class ApkTool:
     @classmethod
-    def reinstall(cls, app_id, abi=None):
+    def reinstall(cls, app_id, maven_repo_prop, abi=None):
         os.chdir('android')
-        abi_prop = '--project-prop ABI={}'.format(abi) if abi else ''
-        os.system( \
-'./gradlew {abi_prop} :{app}:clean :{app}:uninstallRelease :{app}:installRelease'
-.format(abi_prop=abi_prop, app=app_id))
+        gradle_prop = '--project-prop ' + maven_repo_prop
+        gradle_prop += ' --project-prop ABI={}'.format(abi) if abi else ''
+        cmd = './gradlew {gradle_prop} \
+:{app}:clean :{app}:uninstallRelease :{app}:installRelease'.format(
+                gradle_prop=gradle_prop, app=app_id)
+        logger.debug('reinstall - cmd: {}'.format(cmd))
+        os.system(cmd)
         os.chdir('../')
 
 
@@ -94,32 +107,183 @@ class RenderComponentThroughput:
         return ret
 
 
+class JSDistManager:
+    STORE_DIST_DIR = os.path.join(ROOT_DIR, 'js_dist')
+    DISTS = {
+        'jsc_official_245459': {
+            'download_url': 'https://registry.npmjs.org/jsc-android/-/jsc-android-245459.0.0.tgz',
+            'version': '245459.0.0',
+            'meta': ('Baseline JIT (but not x86)', 'WebKitGTK 2.24.2'),
+            'aar_glob': '**/android-jsc/**/*.aar',
+            'binary_name': 'libjsc.so',
+        },
+        'v8_751': {
+            'download_url': 'https://registry.npmjs.org/v8-android/-/v8-android-7.5.1.tgz',
+            'version': '7.5.1',
+            'meta': ('JIT-less (but not arm64-v8a)', 'V8 7.5.288.23', 'Support Intl'),
+            'aar_glob': '**/*.aar',
+            'binary_name': 'libv8.so',
+        },
+        'v8_751_jit': {
+            'download_url': 'https://registry.npmjs.org/v8-android/-/v8-android-7.5.1.tgz',
+            'version': '7.5.1',
+            'meta': ('JIT', 'V8 7.5.288.23', 'Support Intl'),
+            'aar_glob': '**/*.aar',
+            'binary_name': 'libv8.so',
+        },
+    }
+
+    def __init__(self, dist_id):
+        self._dist_id = dist_id
+        self._dist_info = self.DISTS[dist_id]
+
+    def prepare(self):
+        js_dist_path = os.path.join(self.STORE_DIST_DIR, self._dist_id)
+        maven_dist_path = os.path.join(js_dist_path, 'package', 'dist')
+        if not os.path.isdir(maven_dist_path):
+            logger.info('JSDistManager::prepare() - Download and extract\n')
+            os.system('mkdir -p {}'.format(js_dist_path))
+            self._download_dist(self._dist_info['download_url'], js_dist_path)
+        return maven_dist_path
+
+    def get_binary_size(self, abi=None):
+        js_dist_path = os.path.join(self.STORE_DIST_DIR, self._dist_id)
+        if not os.path.exists(js_dist_path):
+            raise RuntimeError('js_dist_path is not existed - ' + js_dist_path)
+        aar_paths = glob.glob(
+                os.path.join(js_dist_path, self._dist_info['aar_glob']),
+                recursive=True)
+        if len(aar_paths) < 1:
+            return -1
+        aar_path = aar_paths[0]
+        _abi = abi or 'armeabi-v7a'
+        binary_path = os.path.join('jni', _abi, self._dist_info['binary_name'])
+        output_file = tempfile.NamedTemporaryFile(delete=False)
+        output_path = output_file.name
+        output_file.close()
+        cmd = 'unzip -p {aar_path} {binary_path} > {output_path}'.format(
+            aar_path=aar_path, binary_path=binary_path, output_path=output_path)
+        logger.debug('get_binary_size - cmd: {}'.format(cmd))
+        os.system(cmd)
+        size = os.path.getsize(output_path)
+        self._strip_binary(output_path, _abi)
+        size = os.path.getsize(output_path)
+        os.unlink(output_path)
+        return size
+
+    @property
+    def info(self):
+        return self._dist_info
+
+    @classmethod
+    def _download_dist(cls, url, output_path):
+        cmd = 'wget -O- "{url}" | tar x - -C "{output_path}"'.format(
+                url=url, output_path=output_path)
+        logger.debug('download_dist - cmd: {}'.format(cmd))
+        os.system(cmd)
+
+    @classmethod
+    def _strip_binary(cls, file_path, abi):
+        ndk_path = os.environ['NDK_PATH']
+        if not ndk_path:
+            raise RuntimeError('NDK_PATH environment variable is not defined.')
+
+        mappings = {
+            'armeabi-v7a': 'arm-linux-androideabi-*',
+            'arm64-v8a': 'aarch64-linux-android-*',
+            'x86': 'x86-*',
+            'x86_64': 'x86_64-*',
+        }
+        strip_tool_paths = glob.glob(os.path.join(
+            ndk_path, 'toolchains', mappings[abi], '**', '*-strip'),
+            recursive=True)
+        if len(strip_tool_paths) < 1:
+            raise RuntimeError('Unable to find strip from NDK toolchains')
+        strip_tool_path = strip_tool_paths[0]
+        cmd = strip_tool_path + ' ' + file_path
+        logger.debug('strip_binary - cmd: {}'.format(cmd))
+        os.system(cmd)
+
+
+def show_configs(abi, jsc_dist_manager, v8_dist_manager):
+    logger.info('ABI: ' + abi or 'default')
+    logger.info('\n')
+
+    logger.info('JSC version: {}\nJSC meta: {}\nJSC binary size: {}'.format(
+        jsc_dist_manager.info['version'],
+        ', '.join(jsc_dist_manager.info['meta']),
+        jsc_dist_manager.get_binary_size(abi)))
+    logger.info('\n')
+    logger.info('V8 version: {}\nV8 meta: {}\nV8 binary size: {}'.format(
+        v8_dist_manager.info['version'],
+        ', '.join(v8_dist_manager.info['meta']),
+        v8_dist_manager.get_binary_size(abi)))
+    logger.info('\n\n')
+
+
+def setup_logger(logger, verbose=False):
+    handler = logging.StreamHandler(sys.stdout)
+    if verbose:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
+
+
+def parse_args():
+    arg_parser = argparse.ArgumentParser()
+
+    arg_parser.add_argument('--verbose', '-v',
+        action='store_true',
+        help='Enable verbose log')
+
+    return arg_parser.parse_args()
+
 def main():
+    args = parse_args()
+    setup_logger(logger, args.verbose)
+
     abi='armeabi-v7a'
-    ApkTool.reinstall('jsc', abi=abi)
-    ApkTool.reinstall('v8', abi=abi)
 
-    print('----------- Benchmark configs -----------')
-    print('ABI: ' + abi or 'default')
-    print('JSC version: ' + '245459.0.0')
-    print('V8 version: ' + '7.5.1')
-    print('\n\n')
+    jsc_dist_manager = JSDistManager('jsc_official_245459')
+    jsc_dist_manager.prepare()
 
-    print('=========== RenderComponentThroughput 10s ===========')
-    print('jsc', RenderComponentThroughput('jsc', 10000).run_with_average(3))
-    print('v8', RenderComponentThroughput('v8', 10000).run_with_average(3))
+    v8_dist_manager = JSDistManager('v8_751')
+    v8_dist_manager.prepare()
 
-    print('=========== RenderComponentThroughput 60s ===========')
-    print('jsc', RenderComponentThroughput('jsc', 60000).run_with_average(3))
-    print('v8', RenderComponentThroughput('v8', 60000).run_with_average(3))
+    logger.info('----------- configs -----------')
+    show_configs(abi, jsc_dist_manager, v8_dist_manager)
 
-    print('=========== RenderComponentThroughput 180s ===========')
-    print('jsc', RenderComponentThroughput('jsc', 180000).run_with_average(3))
-    print('v8', RenderComponentThroughput('v8', 180000).run_with_average(3))
+    logger.info('----------- Install apps -----------')
+    ApkTool.reinstall(
+            'jsc',
+            'JSC_DIST_REPO=' + jsc_dist_manager.prepare(),
+            abi=abi)
+    ApkTool.reinstall(
+            'v8',
+            'V8_DIST_REPO=' + v8_dist_manager.prepare(),
+            abi=abi)
+
+    logger.info('=========== RenderComponentThroughput 10s ===========')
+    logger.info('jsc {}'.format(
+        RenderComponentThroughput('jsc', 10000).run_with_average(3)))
+    logger.info('v8 {}'.format(
+        RenderComponentThroughput('v8', 10000).run_with_average(3)))
+
+    logger.info('=========== RenderComponentThroughput 60s ===========')
+    logger.info('jsc {}'.format(
+        RenderComponentThroughput('jsc', 60000).run_with_average(3)))
+    logger.info('v8 {}'.format(
+        RenderComponentThroughput('v8', 60000).run_with_average(3)))
+
+    logger.info('=========== RenderComponentThroughput 180s ===========')
+    logger.info('jsc {}'.format(
+        RenderComponentThroughput('jsc', 180000).run_with_average(3)))
+    logger.info('v8 {}'.format(
+        RenderComponentThroughput('v8', 180000).run_with_average(3)))
 
     return 0
 
 if __name__ == '__main__':
-    root_dir = os.path.dirname(os.path.realpath(__file__))
-    os.chdir(root_dir)
+    os.chdir(ROOT_DIR)
     main()

@@ -6,15 +6,8 @@ repositories {
         url("$rootDir/../node_modules/react-native/android")
     }
 
-    if (project.hasProperty("JSC_DIST_REPO")) {
-        maven {
-            url(project.findProperty("JSC_DIST_REPO"))
-        }
-    }
-
     maven {
-        // Android JSC is installed from npm
-        url("$rootDir/../node_modules/jsc-android/dist")
+        url(project.findProperty("JSC_DIST_REPO"))
     }
 }
 
