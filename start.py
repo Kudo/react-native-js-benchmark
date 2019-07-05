@@ -10,7 +10,6 @@ from lib.colorful import colorful
 from lib.logger import (get_logger, setup_logger)
 from lib.section import (h1, h2)
 
-
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 logger = get_logger(__name__)
@@ -37,7 +36,8 @@ class AdbTool:
     def get_memory(cls, app_id):
         output = subprocess.check_output([
             'adb', 'shell', 'dumpsys', 'meminfo',
-            'com.rnbenchmark.{}'.format(app_id)]).decode('utf8')
+            'com.rnbenchmark.{}'.format(app_id)
+        ]).decode('utf8')
 
         with io.StringIO(output) as f:
             for line in f:
@@ -60,9 +60,9 @@ class AdbTool:
     @classmethod
     def start_with_link(cls, app_id, path_with_query):
         os.system(
-'adb shell am start -a android.intent.action.VIEW -d "rnbench://{}{}"' \
+            'adb shell am start -a android.intent.action.VIEW -d "rnbench://{}{}"' \
 ' > /dev/null'
-.format(app_id, path_with_query))
+            .format(app_id, path_with_query))
 
 
 class ApkTool:
@@ -73,7 +73,7 @@ class ApkTool:
         gradle_prop += ' --project-prop ABI={}'.format(abi) if abi else ''
         cmd = './gradlew {gradle_prop} \
 :{app}:clean :{app}:uninstallRelease :{app}:installRelease'.format(
-                gradle_prop=gradle_prop, app=app_id)
+            gradle_prop=gradle_prop, app=app_id)
         logger.debug('reinstall - cmd: {}'.format(cmd))
         os.system(cmd)
         os.chdir('../')
@@ -114,25 +114,39 @@ class JSDistManager:
     STORE_DIST_DIR = os.path.join(ROOT_DIR, 'js_dist')
     DISTS = {
         'jsc_official_245459': {
-            'download_url': 'https://registry.npmjs.org/jsc-android/-/jsc-android-245459.0.0.tgz',
-            'version': '245459.0.0',
-            'meta': ('Baseline JIT (but not x86)', 'WebKitGTK 2.24.2', 'Support Intl'),
-            'aar_glob': '**/android-jsc-intl/**/*.aar',
-            'binary_name': 'libjsc.so',
+            'download_url':
+            'https://registry.npmjs.org/jsc-android/-/jsc-android-245459.0.0.tgz',
+            'version':
+            '245459.0.0',
+            'meta': ('Baseline JIT (but not x86)', 'WebKitGTK 2.24.2',
+                     'Support Intl'),
+            'aar_glob':
+            '**/android-jsc-intl/**/*.aar',
+            'binary_name':
+            'libjsc.so',
         },
         'v8_751': {
-            'download_url': 'https://registry.npmjs.org/v8-android/-/v8-android-7.5.1.tgz',
-            'version': '7.5.1',
-            'meta': ('JIT-less (but not arm64-v8a)', 'V8 7.5.288.23', 'Support Intl'),
-            'aar_glob': '**/*.aar',
-            'binary_name': 'libv8.so',
+            'download_url':
+            'https://registry.npmjs.org/v8-android/-/v8-android-7.5.1.tgz',
+            'version':
+            '7.5.1',
+            'meta': ('JIT-less (but not arm64-v8a)', 'V8 7.5.288.23',
+                     'Support Intl'),
+            'aar_glob':
+            '**/*.aar',
+            'binary_name':
+            'libv8.so',
         },
         'v8_751_jit': {
-            'download_url': 'https://registry.npmjs.org/v8-android/-/v8-android-7.5.1-jit.tgz',
-            'version': '7.5.1',
+            'download_url':
+            'https://registry.npmjs.org/v8-android/-/v8-android-7.5.1-jit.tgz',
+            'version':
+            '7.5.1',
             'meta': ('JIT', 'V8 7.5.288.23', 'Support Intl'),
-            'aar_glob': '**/*.aar',
-            'binary_name': 'libv8.so',
+            'aar_glob':
+            '**/*.aar',
+            'binary_name':
+            'libv8.so',
         },
     }
 
@@ -154,8 +168,8 @@ class JSDistManager:
         if not os.path.exists(js_dist_path):
             raise RuntimeError('js_dist_path is not existed - ' + js_dist_path)
         aar_paths = glob.glob(
-                os.path.join(js_dist_path, self._dist_info['aar_glob']),
-                recursive=True)
+            os.path.join(js_dist_path, self._dist_info['aar_glob']),
+            recursive=True)
         if len(aar_paths) < 1:
             return -1
         aar_path = aar_paths[0]
@@ -165,7 +179,9 @@ class JSDistManager:
         output_path = output_file.name
         output_file.close()
         cmd = 'unzip -p {aar_path} {binary_path} > {output_path}'.format(
-            aar_path=aar_path, binary_path=binary_path, output_path=output_path)
+            aar_path=aar_path,
+            binary_path=binary_path,
+            output_path=output_path)
         logger.debug('get_binary_size - cmd: {}'.format(cmd))
         os.system(cmd)
         size = os.path.getsize(output_path)
@@ -181,7 +197,7 @@ class JSDistManager:
     @classmethod
     def _download_dist(cls, url, output_path):
         cmd = 'wget -O- "{url}" | tar x - -C "{output_path}"'.format(
-                url=url, output_path=output_path)
+            url=url, output_path=output_path)
         logger.debug('download_dist - cmd: {}'.format(cmd))
         os.system(cmd)
 
@@ -197,8 +213,9 @@ class JSDistManager:
             'x86': 'x86-*',
             'x86_64': 'x86_64-*',
         }
-        strip_tool_paths = glob.glob(os.path.join(
-            ndk_path, 'toolchains', mappings[abi], '**', '*-strip'),
+        strip_tool_paths = glob.glob(
+            os.path.join(ndk_path, 'toolchains', mappings[abi], '**',
+                         '*-strip'),
             recursive=True)
         if len(strip_tool_paths) < 1:
             raise RuntimeError('Unable to find strip from NDK toolchains')
@@ -224,13 +241,11 @@ def show_configs(abi, jsc_dist_manager, v8_dist_manager):
     logger.info('\n\n')
 
 
-
 def parse_args():
     arg_parser = argparse.ArgumentParser()
 
-    arg_parser.add_argument('--verbose', '-v',
-        action='store_true',
-        help='Enable verbose log')
+    arg_parser.add_argument(
+        '--verbose', '-v', action='store_true', help='Enable verbose log')
 
     return arg_parser.parse_args()
 
@@ -239,7 +254,7 @@ def main():
     args = parse_args()
     setup_logger(logger, args.verbose)
 
-    abi='armeabi-v7a'
+    abi = 'armeabi-v7a'
 
     jsc_dist_manager = JSDistManager('jsc_official_245459')
     jsc_dist_manager.prepare()
@@ -252,13 +267,9 @@ def main():
 
     logger.info(h2('Install apps'))
     ApkTool.reinstall(
-            'jsc',
-            'JSC_DIST_REPO=' + jsc_dist_manager.prepare(),
-            abi=abi)
+        'jsc', 'JSC_DIST_REPO=' + jsc_dist_manager.prepare(), abi=abi)
     ApkTool.reinstall(
-            'v8',
-            'V8_DIST_REPO=' + v8_dist_manager.prepare(),
-            abi=abi)
+        'v8', 'V8_DIST_REPO=' + v8_dist_manager.prepare(), abi=abi)
 
     logger.info(h2('RenderComponentThroughput 10s'))
     logger.info('jsc {}'.format(
@@ -279,6 +290,7 @@ def main():
         RenderComponentThroughput('v8', 180000).run_with_average(3)))
 
     return 0
+
 
 if __name__ == '__main__':
     os.chdir(ROOT_DIR)

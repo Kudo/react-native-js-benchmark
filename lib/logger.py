@@ -5,9 +5,11 @@ from colorful import colorful
 
 def setup_logger(logger, verbose=False):
     handler = logging.StreamHandler(sys.stdout)
+
     class LevelFormatter(logging.Formatter):
-        DEBUG_FORMATTER = logging.Formatter(str(
-            colorful.italic_base01('    >>> [DEBUG] %(message)s')))
+        DEBUG_FORMATTER = logging.Formatter(
+            str(colorful.italic_base01('    >>> [DEBUG] %(message)s')))
+
         def format(self, record):
             if record.levelno == logging.DEBUG:
                 return self.DEBUG_FORMATTER.format(record)
