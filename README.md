@@ -22,20 +22,29 @@ These benchmarks ran on Samsung Galaxy Note 5
   **Higher result is better**
 
 ### TTI (Time-To-Interaction)
-TBD
+
+The series of test cases aim to measure how long JS engine parse and evaluate the scripts.
+TTI time is from the `content_appear_view_time - before_start_ReactInstanceManager_time`.
+In different test cases, we try to generate different size of JS bundle and compare if size matters.
+
+  - TTI ~3 MiB bundle
+  - TTI ~10 MiB bundle
+  - TTI ~15 MiB bundle
 
 ## How to Run the Benchmark
 
 Prerequisites:
 
+- macOS 10.14 (Other macOS versions or Linux might be supported, but I don't verify that)
 - Python 3
 - Node 8+
 
 Simply to run
 
 ```sh
-python start.py
+python start.py -a
 ```
+
 ## Disclaimer
 
 This project is specific to measure JS engine performance for React Native. It is not designated to do generic JS engine comparison.
