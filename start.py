@@ -67,9 +67,12 @@ class AdbTool:
 
 class ApkTool:
     @classmethod
-    def reinstall(cls, app_id, maven_repo_prop, abi=None):
+    def reinstall(cls, app_id, maven_repo_prop, abi=None, verbose=False):
         os.chdir('android')
-        gradle_prop = '--project-prop ' + maven_repo_prop
+        gradle_prop = ''
+        if verbose:
+            gradle_prop += '-q '
+        gradle_prop += '--project-prop ' + maven_repo_prop
         gradle_prop += ' --project-prop ABI={}'.format(abi) if abi else ''
         cmd = './gradlew {gradle_prop} \
 :{app}:clean :{app}:uninstallRelease :{app}:installRelease'.format(
@@ -267,9 +270,15 @@ def main():
 
     logger.info(h2('Install apps'))
     ApkTool.reinstall(
-        'jsc', 'JSC_DIST_REPO=' + jsc_dist_manager.prepare(), abi=abi)
+        'jsc',
+        'JSC_DIST_REPO=' + jsc_dist_manager.prepare(),
+        abi=abi,
+        verbose=args.verbose)
     ApkTool.reinstall(
-        'v8', 'V8_DIST_REPO=' + v8_dist_manager.prepare(), abi=abi)
+        'v8',
+        'V8_DIST_REPO=' + v8_dist_manager.prepare(),
+        abi=abi,
+        verbose=args.verbose)
 
     logger.info(h2('RenderComponentThroughput 10s'))
     logger.info('jsc {}'.format(
