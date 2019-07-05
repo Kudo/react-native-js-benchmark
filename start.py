@@ -240,6 +240,8 @@ def parse_args():
     arg_parser.add_argument(
         '--all', '-a', action='store_true', help='Run all benchmarks')
     arg_parser.add_argument(
+        '--config-only', action='store_true', help='Show JS dist config only')
+    arg_parser.add_argument(
         'suites',
         nargs='*',
         help=
@@ -247,7 +249,7 @@ def parse_args():
     )
 
     args = arg_parser.parse_args()
-    if not args.all and len(args.suites) == 0:
+    if not any((args.all, args.config_only)) and len(args.suites) == 0:
         arg_parser.print_help()
         sys.exit(1)
     return args
@@ -308,6 +310,7 @@ def main():
     if args.all or 'TTI' in args.suites:
         suites.append(TTISuite())
 
+    # {armeabi-v7a, arm64-v8a, x86, x86_64}
     abi = 'armeabi-v7a'
 
     jsc_dist_manager = JSDistManager('jsc_official_245459')
