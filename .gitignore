@@ -60,3 +60,7 @@ buck-out/
 
 # JS dist
 js_dist/
+
+# Python bytecode cache
+*.pyc
+__pycache__

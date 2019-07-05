@@ -2,16 +2,18 @@
 import argparse
 import glob
 import io
-import logging
 import os
 import re
 import subprocess
-import sys
 import tempfile
+from lib.colorful import colorful
+from lib.logger import (get_logger, setup_logger)
+from lib.section import (h1, h2)
+
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AdbTool:
@@ -61,6 +63,7 @@ class AdbTool:
 'adb shell am start -a android.intent.action.VIEW -d "rnbench://{}{}"' \
 ' > /dev/null'
 .format(app_id, path_with_query))
+
 
 class ApkTool:
     @classmethod
@@ -113,8 +116,8 @@ class JSDistManager:
         'jsc_official_245459': {
             'download_url': 'https://registry.npmjs.org/jsc-android/-/jsc-android-245459.0.0.tgz',
             'version': '245459.0.0',
-            'meta': ('Baseline JIT (but not x86)', 'WebKitGTK 2.24.2'),
-            'aar_glob': '**/android-jsc/**/*.aar',
+            'meta': ('Baseline JIT (but not x86)', 'WebKitGTK 2.24.2', 'Support Intl'),
+            'aar_glob': '**/android-jsc-intl/**/*.aar',
             'binary_name': 'libjsc.so',
         },
         'v8_751': {
@@ -125,7 +128,7 @@ class JSDistManager:
             'binary_name': 'libv8.so',
         },
         'v8_751_jit': {
-            'download_url': 'https://registry.npmjs.org/v8-android/-/v8-android-7.5.1.tgz',
+            'download_url': 'https://registry.npmjs.org/v8-android/-/v8-android-7.5.1-jit.tgz',
             'version': '7.5.1',
             'meta': ('JIT', 'V8 7.5.288.23', 'Support Intl'),
             'aar_glob': '**/*.aar',
@@ -221,14 +224,6 @@ def show_configs(abi, jsc_dist_manager, v8_dist_manager):
     logger.info('\n\n')
 
 
-def setup_logger(logger, verbose=False):
-    handler = logging.StreamHandler(sys.stdout)
-    if verbose:
-        logger.setLevel(logging.DEBUG)
-    else:
-        logger.setLevel(logging.INFO)
-    logger.addHandler(handler)
-
 
 def parse_args():
     arg_parser = argparse.ArgumentParser()
@@ -239,6 +234,7 @@ def parse_args():
 
     return arg_parser.parse_args()
 
+
 def main():
     args = parse_args()
     setup_logger(logger, args.verbose)
@@ -248,13 +244,13 @@ def main():
     jsc_dist_manager = JSDistManager('jsc_official_245459')
     jsc_dist_manager.prepare()
 
-    v8_dist_manager = JSDistManager('v8_751')
+    v8_dist_manager = JSDistManager('v8_751_jit')
     v8_dist_manager.prepare()
 
-    logger.info('----------- configs -----------')
+    logger.info(h1('Config'))
     show_configs(abi, jsc_dist_manager, v8_dist_manager)
 
-    logger.info('----------- Install apps -----------')
+    logger.info(h2('Install apps'))
     ApkTool.reinstall(
             'jsc',
             'JSC_DIST_REPO=' + jsc_dist_manager.prepare(),
@@ -264,19 +260,19 @@ def main():
             'V8_DIST_REPO=' + v8_dist_manager.prepare(),
             abi=abi)
 
-    logger.info('=========== RenderComponentThroughput 10s ===========')
+    logger.info(h2('RenderComponentThroughput 10s'))
     logger.info('jsc {}'.format(
         RenderComponentThroughput('jsc', 10000).run_with_average(3)))
     logger.info('v8 {}'.format(
         RenderComponentThroughput('v8', 10000).run_with_average(3)))
 
-    logger.info('=========== RenderComponentThroughput 60s ===========')
+    logger.info(h2('RenderComponentThroughput 60s'))
     logger.info('jsc {}'.format(
         RenderComponentThroughput('jsc', 60000).run_with_average(3)))
     logger.info('v8 {}'.format(
         RenderComponentThroughput('v8', 60000).run_with_average(3)))
 
-    logger.info('=========== RenderComponentThroughput 180s ===========')
+    logger.info(h2('RenderComponentThroughput 180s'))
     logger.info('jsc {}'.format(
         RenderComponentThroughput('jsc', 180000).run_with_average(3)))
     logger.info('v8 {}'.format(
