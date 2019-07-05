@@ -316,7 +316,7 @@ def main():
     jsc_dist_manager = JSDistManager('jsc_official_245459')
     jsc_dist_manager.prepare()
 
-    v8_dist_manager = JSDistManager('v8_751_jit')
+    v8_dist_manager = JSDistManager('v8_751')
     v8_dist_manager.prepare()
 
     logger.info(h1('Config'))
