@@ -9,6 +9,7 @@ import URL from 'url-parse';
 
 const ROUTES = {
   '/RenderComponentThroughput': require('./src/ReactRender/RenderComponentThroughput').default,
+  '/TTI': require('./src/TTI/TTIView').default,
 };
 
 const NotFoundView = () => (

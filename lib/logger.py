@@ -1,6 +1,6 @@
 import logging
 import sys
-from colorful import colorful
+from .colorful import colorful
 
 
 def setup_logger(logger, verbose=False):

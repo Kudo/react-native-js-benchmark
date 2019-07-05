@@ -1,85 +1,18 @@
 #!/usr/bin/env python
 import argparse
 import glob
-import io
+import json
 import os
-import re
-import subprocess
+import sys
 import tempfile
 from lib.colorful import colorful
 from lib.logger import (get_logger, setup_logger)
 from lib.section import (h1, h2)
+from lib.tools import (AdbTool, ApkTool)
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 logger = get_logger(__name__)
-
-
-class AdbTool:
-    @classmethod
-    def wait_for_console_log(cls, regex):
-        pattern = re.compile(r'ReactNativeJS: ' + regex)
-        cmd = ['adb', 'logcat']
-        with subprocess.Popen(cmd, stdout=subprocess.PIPE) as proc:
-            for line_in_bytes in iter(proc.stdout.readline, ''):
-                line = line_in_bytes.decode('utf8')
-                search = pattern.search(line)
-                if search is not None:
-                    proc.terminate()
-                    return search
-
-    @classmethod
-    def clear_log(cls):
-        os.system('adb logcat -c')
-
-    @classmethod
-    def get_memory(cls, app_id):
-        output = subprocess.check_output([
-            'adb', 'shell', 'dumpsys', 'meminfo',
-            'com.rnbenchmark.{}'.format(app_id)
-        ]).decode('utf8')
-
-        with io.StringIO(output) as f:
-            for line in f:
-                if line.find('TOTAL') != -1:
-                    columns = line.split()
-                    if len(columns) >= 8:
-                        return columns[1]
-        return -1
-
-    @classmethod
-    def stop_app(cls, app_id):
-        os.system('adb shell am force-stop com.rnbenchmark.{}'.format(app_id))
-        os.system('adb shell am kill com.rnbenchmark.{}'.format(app_id))
-
-    @classmethod
-    def stop_apps(cls):
-        cls.stop_app('jsc')
-        cls.stop_app('v8')
-
-    @classmethod
-    def start_with_link(cls, app_id, path_with_query):
-        os.system(
-            'adb shell am start -a android.intent.action.VIEW -d "rnbench://{}{}"' \
-' > /dev/null'
-            .format(app_id, path_with_query))
-
-
-class ApkTool:
-    @classmethod
-    def reinstall(cls, app_id, maven_repo_prop, abi=None, verbose=False):
-        os.chdir('android')
-        gradle_prop = ''
-        if verbose:
-            gradle_prop += '-q '
-        gradle_prop += '--project-prop ' + maven_repo_prop
-        gradle_prop += ' --project-prop ABI={}'.format(abi) if abi else ''
-        cmd = './gradlew {gradle_prop} \
-:{app}:clean :{app}:uninstallRelease :{app}:installRelease'.format(
-            gradle_prop=gradle_prop, app=app_id)
-        logger.debug('reinstall - cmd: {}'.format(cmd))
-        os.system(cmd)
-        os.chdir('../')
 
 
 class RenderComponentThroughput:
@@ -111,6 +44,64 @@ class RenderComponentThroughput:
         ret['result'] = int(ret['result'] / times)
         ret['memory'] = int(ret['memory'] / times)
         return ret
+
+
+class TTI:
+    def __init__(self, app_id, size):
+        self._app_id = app_id
+        self._size = size
+
+    def run(self, apk_install_kwargs):
+        data_file_path = os.path.join(ROOT_DIR, 'src', 'TTI', 'data.json')
+        with self.PatchBundleContext(data_file_path, self._size):
+            ApkTool.reinstall(**apk_install_kwargs)
+            result = self._run_batch_with_average(3)
+            logger.info('{app} {result}'.format(
+                app=self._app_id, result=result))
+
+    class PatchBundleContext:
+        def __init__(self, data_file_path, size):
+            self._data_file_path = data_file_path
+            self._size = size
+
+        def __enter__(self):
+            os.rename(self._data_file_path, self._data_file_path + '.bak')
+            with open(self._data_file_path, 'w') as f:
+                f.write(self._generate_json_string(self._size))
+
+        def _generate_json_string(self, size):
+            data = {
+                'description': 'GENERATE_FAKE_DATA',
+                'size': size,
+                'data': 'a' * size,
+            }
+            return json.dumps(data)
+
+        def __exit__(self, type, value, traceback):
+            os.rename(self._data_file_path + '.bak', self._data_file_path)
+
+    @classmethod
+    def _wait_for_tti_log(cls):
+        return int(AdbTool.wait_for_log(r'TTI=(\d+)', 'MeasureTTI').group(1))
+
+    @classmethod
+    def _start(cls, app_id):
+        os.system(
+            'adb shell am start -a android.intent.action.VIEW -d "rnbench://{}/TTI" > /dev/null'
+            .format(app_id))
+
+    def _run_batch(self):
+        AdbTool.stop_apps()
+        AdbTool.clear_log()
+        self._start(self._app_id)
+        return self._wait_for_tti_log()
+
+    def _run_batch_with_average(self, times):
+        result = 0
+        for _ in range(times):
+            result += self._run_batch()
+        result = int(result / times)
+        return result
 
 
 class JSDistManager:
@@ -229,19 +220,16 @@ class JSDistManager:
 
 
 def show_configs(abi, jsc_dist_manager, v8_dist_manager):
-    logger.info('ABI: ' + abi or 'default')
-    logger.info('\n')
+    logger.info('ABI: {}\n'.format(abi or 'default'))
 
-    logger.info('JSC version: {}\nJSC meta: {}\nJSC binary size: {}'.format(
+    logger.info('JSC version: {}\nJSC meta: {}\nJSC binary size: {}\n'.format(
         jsc_dist_manager.info['version'],
         ', '.join(jsc_dist_manager.info['meta']),
         jsc_dist_manager.get_binary_size(abi)))
-    logger.info('\n')
-    logger.info('V8 version: {}\nV8 meta: {}\nV8 binary size: {}'.format(
+    logger.info('V8 version: {}\nV8 meta: {}\nV8 binary size: {}\n'.format(
         v8_dist_manager.info['version'],
         ', '.join(v8_dist_manager.info['meta']),
         v8_dist_manager.get_binary_size(abi)))
-    logger.info('\n\n')
 
 
 def parse_args():
@@ -249,13 +237,76 @@ def parse_args():
 
     arg_parser.add_argument(
         '--verbose', '-v', action='store_true', help='Enable verbose log')
+    arg_parser.add_argument(
+        '--all', '-a', action='store_true', help='Run all benchmarks')
+    arg_parser.add_argument(
+        'suites',
+        nargs='*',
+        help=
+        'Benchmark suites to run - supported arguments: RenderComponentThroughput, TTI'
+    )
 
-    return arg_parser.parse_args()
+    args = arg_parser.parse_args()
+    if not args.all and len(args.suites) == 0:
+        arg_parser.print_help()
+        sys.exit(1)
+    return args
+
+
+class RenderComponentThroughputSuite:
+    def run(self, jsc_apk_install_kwargs, v8_apk_install_kwargs):
+        logger.info(h1('RenderComponentThroughput Suite'))
+        ApkTool.reinstall(**jsc_apk_install_kwargs)
+        ApkTool.reinstall(**v8_apk_install_kwargs)
+
+        logger.info(h2('RenderComponentThroughput 10s'))
+        logger.info('jsc {}'.format(
+            RenderComponentThroughput('jsc', 10000).run_with_average(3)))
+        logger.info('v8 {}'.format(
+            RenderComponentThroughput('v8', 10000).run_with_average(3)))
+
+        logger.info(h2('RenderComponentThroughput 60s'))
+        logger.info('jsc {}'.format(
+            RenderComponentThroughput('jsc', 60000).run_with_average(3)))
+        logger.info('v8 {}'.format(
+            RenderComponentThroughput('v8', 60000).run_with_average(3)))
+
+        logger.info(h2('RenderComponentThroughput 180s'))
+        logger.info('jsc {}'.format(
+            RenderComponentThroughput('jsc', 180000).run_with_average(3)))
+        logger.info('v8 {}'.format(
+            RenderComponentThroughput('v8', 180000).run_with_average(3)))
+
+
+class TTISuite:
+    def run(self, jsc_apk_install_kwargs, v8_apk_install_kwargs):
+        logger.info(h1('TTI Suite'))
+
+        logger.info(h2('TTI 3MiB'))
+        size = 1024 * 1024 * 3
+        TTI('jsc', size).run(jsc_apk_install_kwargs)
+        TTI('v8', size).run(v8_apk_install_kwargs)
+
+        logger.info(h2('TTI 10MiB'))
+        size = 1024 * 1024 * 10
+        TTI('jsc', size).run(jsc_apk_install_kwargs)
+        TTI('v8', size).run(v8_apk_install_kwargs)
+
+        logger.info(h2('TTI 15MiB'))
+        size = 1024 * 1024 * 15
+        TTI('jsc', size).run(jsc_apk_install_kwargs)
+        TTI('v8', size).run(v8_apk_install_kwargs)
 
 
 def main():
     args = parse_args()
     setup_logger(logger, args.verbose)
+
+    suites = []
+    if args.all or 'RenderComponentThroughput' in args.suites:
+        suites.append(RenderComponentThroughputSuite())
+    if args.all or 'TTI' in args.suites:
+        suites.append(TTISuite())
 
     abi = 'armeabi-v7a'
 
@@ -268,35 +319,22 @@ def main():
     logger.info(h1('Config'))
     show_configs(abi, jsc_dist_manager, v8_dist_manager)
 
-    logger.info(h2('Install apps'))
-    ApkTool.reinstall(
-        'jsc',
-        'JSC_DIST_REPO=' + jsc_dist_manager.prepare(),
-        abi=abi,
-        verbose=args.verbose)
-    ApkTool.reinstall(
-        'v8',
-        'V8_DIST_REPO=' + v8_dist_manager.prepare(),
-        abi=abi,
-        verbose=args.verbose)
+    jsc_apk_install_kwargs = {
+        'app_id': 'jsc',
+        'maven_repo_prop': 'JSC_DIST_REPO=' + jsc_dist_manager.prepare(),
+        'abi': abi,
+        'verbose': args.verbose,
+    }
 
-    logger.info(h2('RenderComponentThroughput 10s'))
-    logger.info('jsc {}'.format(
-        RenderComponentThroughput('jsc', 10000).run_with_average(3)))
-    logger.info('v8 {}'.format(
-        RenderComponentThroughput('v8', 10000).run_with_average(3)))
+    v8_apk_install_kwargs = {
+        'app_id': 'v8',
+        'maven_repo_prop': 'V8_DIST_REPO=' + v8_dist_manager.prepare(),
+        'abi': abi,
+        'verbose': args.verbose,
+    }
 
-    logger.info(h2('RenderComponentThroughput 60s'))
-    logger.info('jsc {}'.format(
-        RenderComponentThroughput('jsc', 60000).run_with_average(3)))
-    logger.info('v8 {}'.format(
-        RenderComponentThroughput('v8', 60000).run_with_average(3)))
-
-    logger.info(h2('RenderComponentThroughput 180s'))
-    logger.info('jsc {}'.format(
-        RenderComponentThroughput('jsc', 180000).run_with_average(3)))
-    logger.info('v8 {}'.format(
-        RenderComponentThroughput('v8', 180000).run_with_average(3)))
+    for suite in suites:
+        suite.run(jsc_apk_install_kwargs, v8_apk_install_kwargs)
 
     return 0
 
