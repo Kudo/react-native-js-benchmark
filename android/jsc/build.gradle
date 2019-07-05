@@ -114,7 +114,7 @@ def enableProguardInReleaseBuilds = false
  * when using with locales other than en-US.
  * Note that this variant is about 6MiB larger per architecture than default.
  */
-def useIntlJsc = false
+def useIntlJsc = true
 
 def includeABIs() {
     if (project.hasProperty("ABI")) {
