@@ -119,6 +119,17 @@ class JSDistManager:
             'binary_name':
             'libjsc.so',
         },
+        'jsc_245459_no_jit': {
+            'download_url':
+            'https://registry.npmjs.org/@kudo-ci/jsc-android/-/jsc-android-245459.0.0-no-jit.tgz',
+            'version':
+            '245459.0.0-no-jit',
+            'meta': ('JIT-less', 'WebKitGTK 2.24.2', 'Support Intl'),
+            'aar_glob':
+            '**/android-jsc-intl/**/*.aar',
+            'binary_name':
+            'libjsc.so',
+        },
         'v8_751': {
             'download_url':
             'https://registry.npmjs.org/v8-android/-/v8-android-7.5.1.tgz',
