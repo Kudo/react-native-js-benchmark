@@ -18,6 +18,16 @@ const NotFoundView = () => (
   </View>
 );
 
+const renderEngine = () => {
+  if (typeof global.HermesInternal === 'object') {
+    return 'Hermes'
+  } else if (typeof global._v8runtime === 'function') {
+    return 'V8:' + global._v8runtime().version;
+  } else {
+    return 'JSC'
+  }
+}
+
 const App = () => {
   const [route, setRoute] = useState(null);
   useEffect(() => {
@@ -39,6 +49,7 @@ const App = () => {
       ) : (
         <NotFoundView />
       )}
+      {__DEV__ && <Text>{renderEngine()}</Text>}
     </View>
   );
 };
