@@ -1,6 +1,7 @@
 import io
 import os
 import re
+import shlex
 import subprocess
 from .logger import get_logger
 
@@ -52,6 +53,7 @@ class AdbTool:
     def stop_apps(cls):
         cls.stop_app('jsc')
         cls.stop_app('v8')
+        cls.stop_app('hermes')
 
     @classmethod
     def start_with_link(cls, app_id, path_with_query):
@@ -80,8 +82,8 @@ class ApkTool:
         cmd = './gradlew {gradle_prop} \
 :{app}:clean :{app}:uninstallRelease :{app}:installRelease'.format(
             gradle_prop=gradle_prop, app=app_id)
-        if not verbose:
-            cmd += ' > /dev/null'
         logger.debug('reinstall - cmd: {}'.format(cmd))
-        os.system(cmd)
+        stdout = subprocess.DEVNULL if not verbose else None
+        stderr = subprocess.DEVNULL if not verbose else None
+        subprocess.run(shlex.split(cmd), stdout=stdout, stderr=stderr)
         os.chdir('../')
