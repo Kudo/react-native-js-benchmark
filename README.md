@@ -9,7 +9,8 @@ These benchmarks ran on Samsung Galaxy Note 5
 ## Benchmarks
 
 ### React Rendering
-- RenderComponentThroughput
+
+- [RenderComponentThroughput](https://docs.google.com/spreadsheets/d/1uce3WZ9IaAEUu6Owj3eXEuZb25PDi6ZcgUVV2i500S0/edit#gid=469794458)
   
   The series of test cases aim to measure how many React component could be rendered within some intervals. 
   
@@ -21,7 +22,7 @@ These benchmarks ran on Samsung Galaxy Note 5
    
   **Higher result is better**
 
-### TTI (Time-To-Interaction)
+### [TTI (Time-To-Interaction)](https://docs.google.com/spreadsheets/d/1uce3WZ9IaAEUu6Owj3eXEuZb25PDi6ZcgUVV2i500S0/edit#gid=718456099)
 
 The series of test cases aim to measure how long JS engine parse and evaluate the scripts.
 TTI time is from the `content_appear_view_time - before_start_ReactInstanceManager_time`.
@@ -30,6 +31,10 @@ In different test cases, we try to generate different size of JS bundle and comp
   - TTI ~3 MiB bundle
   - TTI ~10 MiB bundle
   - TTI ~15 MiB bundle
+
+### [APK Size](https://docs.google.com/spreadsheets/d/1uce3WZ9IaAEUu6Owj3eXEuZb25PDi6ZcgUVV2i500S0/edit#gid=246943941)
+
+Simply the comparion of library binary size and final APK size.
 
 ## How to Run the Benchmark
 
