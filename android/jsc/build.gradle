@@ -101,7 +101,7 @@ apply from: "../../node_modules/react-native/react.gradle"
  * Upload all the APKs to the Play Store and people will download
  * the correct one based on the CPU architecture of their device.
  */
-def enableSeparateBuildPerCPUArchitecture = true
+def enableSeparateBuildPerCPUArchitecture = project.findProperty('ABI_BASED_APK') == 'true'
 
 /**
  * Run Proguard to shrink the Java bytecode in release builds.
@@ -120,6 +120,9 @@ def enableProguardInReleaseBuilds = false
  * this variant is about 6MiB larger per architecture than default.
  */
 def jscFlavor = 'org.webkit:android-jsc:+'
+if (project.findProperty("INTL")) {
+    jscFlavor = 'org.webkit:android-jsc-intl:+'
+}
 
 /**
  * Whether to enable the Hermes VM.

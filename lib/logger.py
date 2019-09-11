@@ -3,7 +3,7 @@ import sys
 from .colorful import colorful
 
 
-def setup_logger(logger, verbose=False):
+def setup_logger(verbose=False):
     handler = logging.StreamHandler(sys.stdout)
 
     class LevelFormatter(logging.Formatter):
@@ -16,11 +16,12 @@ def setup_logger(logger, verbose=False):
             return super(LevelFormatter, self).format(record)
 
     handler.setFormatter(LevelFormatter())
-    logger.addHandler(handler)
+    root_logger = logging.getLogger()
+    root_logger.addHandler(handler)
     if verbose:
-        logger.setLevel(logging.DEBUG)
+        root_logger.setLevel(logging.DEBUG)
     else:
-        logger.setLevel(logging.INFO)
+        root_logger.setLevel(logging.INFO)
 
 
 def get_logger(name):

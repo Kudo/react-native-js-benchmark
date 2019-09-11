@@ -1,3 +1,4 @@
+import glob
 import io
 import os
 import re
@@ -65,11 +66,12 @@ class AdbTool:
 
 class ApkTool:
     @classmethod
-    def reinstall(cls,
-                  app_id=None,
-                  maven_repo_prop=None,
-                  abi=None,
-                  verbose=False):
+    def build(cls,
+              app_id=None,
+              maven_repo_prop=None,
+              abi=None,
+              verbose=False,
+              extra_gradle_props=None):
         assert app_id
         assert maven_repo_prop
 
@@ -78,7 +80,52 @@ class ApkTool:
         if verbose:
             gradle_prop += '-q '
         gradle_prop += '--project-prop ' + maven_repo_prop
-        gradle_prop += ' --project-prop ABI={}'.format(abi) if abi else ''
+        if abi:
+            gradle_prop += ' --project-prop ABI={}'.format(abi)
+            gradle_prop += ' --project-prop ABI_BASED_APK=true'
+        if extra_gradle_props:
+            gradle_prop += ' '
+            prefixed_props = ('--project-prop ' + p
+                              for p in extra_gradle_props)
+            gradle_prop += ' '.join(prefixed_props)
+        cmd = './gradlew {gradle_prop} \
+:{app}:clean :{app}:assembleRelease'.format(
+            gradle_prop=gradle_prop, app=app_id)
+        logger.debug('build - cmd: {}'.format(cmd))
+        stdout = subprocess.DEVNULL if not verbose else None
+        stderr = subprocess.DEVNULL if not verbose else None
+        subprocess.run(shlex.split(cmd), stdout=stdout, stderr=stderr)
+        if abi:
+            apk_file = '{app}/build/outputs/apk/release/{app}-{abi}-release.apk'.format(
+                app=app_id, abi=abi)
+        else:
+            apk_file = '{app}/build/outputs/apk/release/{app}-release.apk'.format(
+                app=app_id)
+        apk_file = os.path.abspath(apk_file)
+        os.chdir('../')
+        return apk_file
+
+    @classmethod
+    def reinstall(cls,
+                  app_id=None,
+                  maven_repo_prop=None,
+                  abi=None,
+                  verbose=False,
+                  extra_gradle_props=None):
+        assert app_id
+        assert maven_repo_prop
+
+        os.chdir('android')
+        gradle_prop = ''
+        if verbose:
+            gradle_prop += '-q '
+        gradle_prop += '--project-prop ' + maven_repo_prop
+        if abi:
+            gradle_prop += ' --project-prop ABI={}'.format(abi)
+            gradle_prop += ' --project-prop ABI_BASED_APK=true'
+        if extra_gradle_props:
+            gradle_prop += ' '
+            gradle_prop += '--project-prop {}'.join(extra_gradle_props)
         cmd = './gradlew {gradle_prop} \
 :{app}:clean :{app}:uninstallRelease :{app}:installRelease'.format(
             gradle_prop=gradle_prop, app=app_id)
