@@ -4,10 +4,16 @@ repositories {
     maven {
         // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
         url("$rootDir/../node_modules/react-native/android")
+        content {
+            includeGroup "com.facebook.react"
+        }
     }
 
     maven {
         url(project.findProperty("MAVEN_REPO") ?: "$rootDir/../node_modules/jsc-android/dist")
+        content {
+            includeGroup "org.webkit"
+        }
     }
 }
 

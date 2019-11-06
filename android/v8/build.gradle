@@ -3,9 +3,16 @@ apply plugin: "com.android.application"
 repositories {
     maven {
         url("$rootDir/../node_modules/react-native-v8/dist")
+        content {
+            includeGroup "com.facebook.react"
+        }
     }
+
     maven {
         url(project.findProperty("MAVEN_REPO") ?: "$rootDir/../node_modules/v8-android/dist")
+        content {
+            includeGroup "org.chromium"
+        }
     }
 }
 
