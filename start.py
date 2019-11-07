@@ -5,7 +5,6 @@ import json
 import os
 import sys
 import tempfile
-import js_dist
 from js_dists import JS_DISTS
 from lib.colorful import colorful
 from lib.logger import (get_logger, setup_logger)
