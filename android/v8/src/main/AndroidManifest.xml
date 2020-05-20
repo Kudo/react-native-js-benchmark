@@ -13,7 +13,8 @@
       <activity
         android:name=".MainActivity"
         android:label="RNBench V8"
-        android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+        android:configChanges="keyboard|keyboardHidden|orientation|screenSize|uiMode"
+        android:launchMode="singleTask"
         android:windowSoftInputMode="adjustResize">
         <intent-filter>
             <action android:name="android.intent.action.MAIN" />

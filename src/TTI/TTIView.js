@@ -1,10 +1,10 @@
 /**
  * @format
- * @flow
+ * @flow strict-local
  */
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import {View, Text, StyleSheet} from 'react-native';
 import data from './data.json';
 
 const TTIView = () => (
