@@ -1,8 +1,10 @@
 # JavaScript Engine Benchmark for React Native
 
-## Measure Result
+## Benchmark Results
 
-[The result will keep to be updated at Google SpreadSheets](https://docs.google.com/spreadsheets/d/1uce3WZ9IaAEUu6Owj3eXEuZb25PDi6ZcgUVV2i500S0/edit#gid=1258377944)
+[RN 0.62.2, JSC 250230, V8 8.0, Hermes 0.4.1](https://docs.google.com/spreadsheets/d/1XB6fuk-NYZbCDikxQOAJemE-P8cfbsfdXivTeVwcwIk/edit?usp=sharing)
+
+[RN 0.60.3, JSC 245459, V8 7.5.1, Hermes 0.1.0](https://docs.google.com/spreadsheets/d/1uce3WZ9IaAEUu6Owj3eXEuZb25PDi6ZcgUVV2i500S0/edit#gid=1258377944)
 
 These benchmarks ran on Samsung Galaxy Note 5
 
@@ -10,7 +12,7 @@ These benchmarks ran on Samsung Galaxy Note 5
 
 ### React Rendering
 
-- [RenderComponentThroughput](https://docs.google.com/spreadsheets/d/1uce3WZ9IaAEUu6Owj3eXEuZb25PDi6ZcgUVV2i500S0/edit#gid=469794458)
+- RenderComponentThroughput
   
   The series of test cases aim to measure how many React component could be rendered within some intervals. 
   
@@ -22,7 +24,7 @@ These benchmarks ran on Samsung Galaxy Note 5
    
   **Higher result is better**
 
-### [TTI (Time-To-Interaction)](https://docs.google.com/spreadsheets/d/1uce3WZ9IaAEUu6Owj3eXEuZb25PDi6ZcgUVV2i500S0/edit#gid=718456099)
+### TTI (Time-To-Interaction)
 
 The series of test cases aim to measure how long JS engine parse and evaluate the scripts.
 TTI time is from the `content_appear_view_time - before_start_ReactInstanceManager_time`.
@@ -32,7 +34,7 @@ In different test cases, we try to generate different size of JS bundle and comp
   - TTI ~10 MiB bundle
   - TTI ~15 MiB bundle
 
-### [APK Size](https://docs.google.com/spreadsheets/d/1uce3WZ9IaAEUu6Owj3eXEuZb25PDi6ZcgUVV2i500S0/edit#gid=246943941)
+### APK Size
 
 Simply the comparion of library binary size and final APK size.
 
