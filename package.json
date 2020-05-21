@@ -12,7 +12,7 @@
   "dependencies": {
     "react": "16.11.0",
     "react-native": "0.62.2",
-    "react-native-v8": "0.61.5-patch.1",
+    "react-native-v8": "0.62.2-patch.1",
     "url-parse": "^1.4.7"
   },
   "devDependencies": {
