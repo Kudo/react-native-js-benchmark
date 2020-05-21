@@ -327,7 +327,7 @@ def main():
         suites.append(ApkSize())
 
     #  abis = ('armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64')
-    abis = ('armeabi-v7a', )
+    abis = ('arm64-v8a', )
     apk_abi = abis[0] if len(abis) == 1 else None
 
     jsc_dist_manager = JSDistManager('jsc_250230')
