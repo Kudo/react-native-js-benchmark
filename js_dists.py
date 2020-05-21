@@ -44,6 +44,21 @@ JS_DISTS = {
         'intl':
         False,
     },
+    'v8_80_jit_nointl': {
+        'download_url':
+        'https://registry.npmjs.org/v8-android-jit-nointl/-/v8-android-jit-nointl-8.80.1.tgz',
+        'version':
+        '8.80.1',
+        'meta': ('JIT', 'V8 8.0.426.16'),
+        'aar_glob':
+        '**/*.aar',
+        'binary_name':
+        'libv8android.so',
+        'maven_dist_path':
+        'package/dist',
+        'intl':
+        False,
+    },
     'hermes_041': {
         'download_url':
         'https://registry.npmjs.org/hermes-engine/-/hermes-engine-0.4.1.tgz',
