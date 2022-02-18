@@ -333,10 +333,10 @@ def main():
     jsc_dist_manager = JSDistManager('jsc_250230')
     jsc_dist_manager.prepare()
 
-    v8_dist_manager = JSDistManager('v8_80_nointl')
+    v8_dist_manager = JSDistManager('v8_93_jit_nointl')
     v8_dist_manager.prepare()
 
-    hermes_dist_manager = JSDistManager('hermes_041')
+    hermes_dist_manager = JSDistManager('hermes_090')
     hermes_dist_manager.prepare()
 
     logger.info(h1('Config'))
