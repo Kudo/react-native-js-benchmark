@@ -160,9 +160,9 @@ class JSDistManager:
 
     @classmethod
     def _strip_binary(cls, file_path, abi):
-        ndk_path = os.environ['NDK_PATH']
+        ndk_path = os.environ['ANDROID_NDK_HOME']
         if not ndk_path:
-            raise RuntimeError('NDK_PATH environment variable is not defined.')
+            raise RuntimeError('ANDROID_NDK_HOME environment variable is not defined.')
 
         mappings = {
             'armeabi-v7a': 'arm-linux-androideabi-*',
