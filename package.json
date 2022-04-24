@@ -12,8 +12,9 @@
   "dependencies": {
     "react": "17.0.2",
     "react-native": "0.68.1",
-    "react-native-v8": "0.66.0-patch.0",
-    "url-parse": "^1.5.3"
+    "react-native-v8": "~1.1.0",
+    "url-parse": "^1.5.3",
+    "v8-android-jit": "^9.93.0"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9",

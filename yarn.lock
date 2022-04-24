@@ -6159,12 +6159,10 @@ react-native-gradle-plugin@^0.0.6:
   resolved "https://registry.yarnpkg.com/react-native-gradle-plugin/-/react-native-gradle-plugin-0.0.6.tgz#b61a9234ad2f61430937911003cddd7e15c72b45"
   integrity sha512-eIlgtsmDp1jLC24dRn43hB3kEcZVqx6DUQbR0N1ABXGnMEafm9I3V3dUUeD1vh+Dy5WqijSoEwLNUPLgu5zDMg==
 
-react-native-v8@0.66.0-patch.0:
-  version "0.66.0-patch.0"
-  resolved "https://registry.yarnpkg.com/react-native-v8/-/react-native-v8-0.66.0-patch.0.tgz#8874eb6e9894f0a1ea8f860401a9da7f4faaaeb4"
-  integrity sha512-y28CFRNgUIsU+Miz4KqwKn7H+nN33unamnvpFBS1sO3O9KbWLBXe+sV+4Ci/jD9vfQL45R52trBZYOgYzhF2uA==
-  dependencies:
-    v8-android-jit "~9.93.0"
+react-native-v8@~1.1.0:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/react-native-v8/-/react-native-v8-1.1.1.tgz#805ca50edcecc5333b1c21e539a293064d854af5"
+  integrity sha512-rNb0OOCrQjNXIoOsIW4ZiGYRYqhoVb9GUppUyGL4zWia/tdi7b1JGB0UHjrCt1+HJ1JisABpV2sHm/zVlSrmfA==
 
 react-native@0.68.1:
   version "0.68.1"
@@ -7346,7 +7344,7 @@ uuid@^8.3.0:
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-8.3.2.tgz#80d5b5ced271bb9af6c445f21a1a04c606cefbe2"
   integrity sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==
 
-v8-android-jit@~9.93.0:
+v8-android-jit@^9.93.0:
   version "9.93.0"
   resolved "https://registry.yarnpkg.com/v8-android-jit/-/v8-android-jit-9.93.0.tgz#2e52d3878da97647959991cefc5b90e47449f51a"
   integrity sha512-qSEnxj/7x2lqvAjRtdox0fx20J5ekcLg/O1/M4vNKUtbWG75+/ACspP3n0KD0RIYLhD8F2iGxERRbwu9FbjKRg==

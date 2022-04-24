@@ -14,4 +14,7 @@ module.exports = {
       },
     }),
   },
+  resolver: {
+    blockList: [/\/js_dist\//],
+  },
 };

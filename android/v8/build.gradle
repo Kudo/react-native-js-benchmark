@@ -276,13 +276,18 @@ android {
 
         }
     }
+
+    packagingOptions {
+      exclude '**/libjsc*'
+      exclude '**/libhermes*'
+    }
 }
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
     implementation "com.facebook.react:react-native:+"  // From node_modules
     //noinspection GradleDynamicVersion
-    implementation 'org.chromium:v8-android:+'
+    implementation project(':react-native-v8')
 
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.0.0"
 }

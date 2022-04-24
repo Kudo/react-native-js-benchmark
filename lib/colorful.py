@@ -1,6 +1,7 @@
 try:
     import colorful
-    colorful.use_style('solarized')
+
+    colorful.use_style("solarized")
 except ImportError:
 
     class NOPColorful:
