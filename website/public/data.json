@@ -4,34 +4,51 @@
     "dataSet": [
       {
         "jsEngine": "jsc",
-        "groupData": [818, 1977, 3283]
+        "groupData": [741, 1842, 3182]
       },
       {
         "jsEngine": "v8-android-jit",
-        "groupData": [1421, 3229, 4717]
+        "groupData": [1281, 2883, 4587]
       },
       {
         "jsEngine": "hermes",
-        "groupData": [496, 1163, 1949]
+        "groupData": [465, 1074, 1868]
       }
     ]
   },
+  "RenderComponentMemory": {
+    "testGroups": ["100 items", "1000 items", "3000 items"],
+    "dataSet": [
+      {
+        "jsEngine": "jsc",
+        "groupData": [113367, 258664, 295294]
+      },
+      {
+        "jsEngine": "v8-android-jit",
+        "groupData": [115423, 252818, 342301]
+      },
+      {
+        "jsEngine": "hermes",
+        "groupData": [97894, 152708, 262522]
+      }
+    ]
+  },
+
   "TTI": {
     "testGroups": ["3MB bundle", "10MB bundle", "15MB bundle"],
     "dataSet": [
       {
         "jsEngine": "jsc",
-        "groupData": [144, 208, 276]
+        "groupData": [156, 230, 311]
       },
       {
         "jsEngine": "v8-android-jit",
-        "groupData": [119, 207, 335]
+        "groupData": [126, 219, 312]
       },
       {
         "jsEngine": "hermes",
-        "groupData": [64, 98, 110]
+        "groupData": [77, 101, 140]
       }
-    ],
-    "comment": "// TODO: Add asset size"
+    ]
   }
 }
