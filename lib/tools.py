@@ -81,7 +81,7 @@ class ApkTool:
             gradle_prop += '-q '
         gradle_prop += '--project-prop ' + maven_repo_prop
         if abi:
-            gradle_prop += ' --project-prop ABI={}'.format(abi)
+            gradle_prop += ' --project-prop reactNativeArchitectures={}'.format(abi)
             gradle_prop += ' --project-prop ABI_BASED_APK=true'
         if extra_gradle_props:
             gradle_prop += ' '
@@ -121,7 +121,7 @@ class ApkTool:
             gradle_prop += '-q '
         gradle_prop += '--project-prop ' + maven_repo_prop
         if abi:
-            gradle_prop += ' --project-prop ABI={}'.format(abi)
+            gradle_prop += ' --project-prop reactNativeArchitectures={}'.format(abi)
             gradle_prop += ' --project-prop ABI_BASED_APK=true'
         if extra_gradle_props:
             gradle_prop += ' '
