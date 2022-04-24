@@ -1,0 +1,94 @@
+.container {
+  padding: 0 2rem;
+}
+
+.main {
+  min-height: 100vh;
+  width: 60vw;
+  margin: 0 auto;
+  padding: 4rem 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.title a {
+  color: #0070f3;
+  text-decoration: none;
+}
+
+.title a:hover,
+.title a:focus,
+.title a:active {
+  text-decoration: underline;
+}
+
+.title {
+  margin: 0;
+  line-height: 1.15;
+  font-size: 4rem;
+}
+
+.title,
+.description {
+  text-align: center;
+}
+
+.description {
+  margin: 4rem 0;
+  line-height: 1.5;
+  font-size: 1.5rem;
+}
+
+.measureInfo {
+  align-self: flex-start;
+  margin: 2rem 0;
+}
+
+.measureInfo li {
+  font-size: 1.25rem;
+  line-height: 1.75;
+  font-family: Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono,
+    Bitstream Vera Sans Mono, Courier New, monospace;
+}
+
+.measureInfo li a {
+  text-decoration: underline;
+}
+.sectionTitle {
+  position: relative;
+}
+
+.sectionTitle::before {
+  position: absolute;
+  top: 0;
+  left: -20px;
+  height: 100%;
+}
+
+.sectionTitle:hover::before {
+  content: '﹟';
+  cursor: pointer;
+}
+
+.sectionAnchor {
+  display: block;
+}
+
+.divider {
+  border-top: 1px solid #ccc;
+  width: 50%;
+  margin: 1.5rem;
+}
+
+.comment {
+  display: block;
+  margin: 1.5rem 0;
+  background: #ededed;
+  color: #333;
+  border-radius: 5px;
+  padding: 0.75rem;
+  font-family: Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono,
+    Bitstream Vera Sans Mono, Courier New, monospace;
+}
