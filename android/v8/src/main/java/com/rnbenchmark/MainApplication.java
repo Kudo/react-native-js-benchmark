@@ -9,14 +9,21 @@ import com.facebook.react.ReactApplication;
 import com.facebook.react.ReactInstanceManager;
 import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
+import com.facebook.react.bridge.JavaScriptExecutorFactory;
+import com.facebook.react.config.ReactFeatureFlags;
 import com.facebook.react.bridge.ReactMarker;
 import com.facebook.react.bridge.ReactMarkerConstants;
+import com.facebook.react.modules.systeminfo.AndroidInfoHelpers;
 import com.facebook.soloader.SoLoader;
+import com.rnbenchmark.newarchitecture.MainApplicationReactNativeHost;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import javax.annotation.Nullable;
+
+import io.csie.kudo.reactnative.v8.ReactNativeV8Package;
+import io.csie.kudo.reactnative.v8.executor.V8ExecutorFactory;
 
 public class MainApplication extends Application implements
     ReactApplication,
@@ -37,6 +44,7 @@ public class MainApplication extends Application implements
       List<ReactPackage> packages = new PackageList(this).getPackages();
       // Packages that cannot be autolinked yet can be added manually here, for example:
       // packages.add(new MyReactNativePackage());
+      packages.add(new ReactNativeV8Package());
       return packages;
     }
 
@@ -44,17 +52,34 @@ public class MainApplication extends Application implements
     protected String getJSMainModuleName() {
       return "index";
     }
+
+    @Override
+    protected JavaScriptExecutorFactory getJavaScriptExecutorFactory() {
+      return new V8ExecutorFactory(
+              getPackageName(),
+              AndroidInfoHelpers.getFriendlyDeviceName(),
+              getUseDeveloperSupport());
+    }
   };
+
+  private final ReactNativeHost mNewArchitectureNativeHost =
+    new MainApplicationReactNativeHost(this);
 
   @Override
   public ReactNativeHost getReactNativeHost() {
-    return mReactNativeHost;
+   if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
+      return mNewArchitectureNativeHost;
+    } else {
+      return mReactNativeHost;
+    }
   }
 
   @Override
   public void onCreate() {
     super.onCreate();
     ReactMarker.addListener(this);
+    // If you opted-in for the New Architecture, we enable the TurboModule system
+    ReactFeatureFlags.useTurboModules = BuildConfig.IS_NEW_ARCHITECTURE_ENABLED;
     SoLoader.init(this, /* native exopackage */ false);
     // initializeFlipper(this, getReactNativeHost().getReactInstanceManager()); // Remove this line if you don't want Flipper enabled
   }

@@ -8,7 +8,8 @@ def setup_logger(verbose=False):
 
     class LevelFormatter(logging.Formatter):
         DEBUG_FORMATTER = logging.Formatter(
-            str(colorful.italic_base01('    >>> [DEBUG] %(message)s')))
+            str(colorful.italic_base01("    >>> [DEBUG] %(message)s"))
+        )
 
         def format(self, record):
             if record.levelno == logging.DEBUG:

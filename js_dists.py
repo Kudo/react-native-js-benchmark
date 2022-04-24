@@ -1,77 +1,29 @@
 JS_DISTS = {
-    'jsc_official_245459': {
-        'download_url':
-        'https://registry.npmjs.org/jsc-android/-/jsc-android-245459.0.0.tgz',
-        'version':
-        '245459.0.0',
-        'meta': ('Baseline JIT (but not x86)', 'WebKitGTK 2.24.2'),
-        'aar_glob':
-        '**/android-jsc/**/*.aar',
-        'binary_name':
-        'libjsc.so',
-        'maven_dist_path':
-        'package/dist',
-        'intl':
-        False,
+    "jsc_250230": {
+        "download_url": "https://registry.npmjs.org/jsc-android/-/jsc-android-250230.2.1.tgz",
+        "version": "250230.2.1",
+        "meta": ("Baseline JIT (but not x86)", "WebKitGTK 2.26.1"),
+        "aar_glob": "**/android-jsc/**/*.aar",
+        "binary_name": "libjsc.so",
+        "maven_dist_path": "package/dist",
+        "intl": False,
     },
-    'jsc_250230': {
-        'download_url':
-        'https://registry.npmjs.org/@kudo-ci/jsc-android/-/jsc-android-250230.2.1.tgz',
-        'version':
-        '250230.2.0',
-        'meta': ('Baseline JIT (but not x86)', 'WebKitGTK 2.26.1'),
-        'aar_glob':
-        '**/android-jsc/**/*.aar',
-        'binary_name':
-        'libjsc.so',
-        'maven_dist_path':
-        'package/dist',
-        'intl':
-        False,
+    "v8_93_jit": {
+        "download_url": "https://registry.npmjs.org/v8-android-jit/-/v8-android-jit-9.93.0.tgz",
+        "version": "9.93.0",
+        "meta": ("JIT", "V8 9.3.345.16"),
+        "aar_glob": "**/*.aar",
+        "binary_name": "libv8android.so",
+        "maven_dist_path": "package/dist",
+        "intl": True,
     },
-    'v8_80_nointl': {
-        'download_url':
-        'https://registry.npmjs.org/v8-android-nointl/-/v8-android-nointl-8.80.1.tgz',
-        'version':
-        '8.80.1',
-        'meta': ('JIT-less', 'V8 8.0.426.16'),
-        'aar_glob':
-        '**/*.aar',
-        'binary_name':
-        'libv8android.so',
-        'maven_dist_path':
-        'package/dist',
-        'intl':
-        False,
-    },
-    'v8_80_jit_nointl': {
-        'download_url':
-        'https://registry.npmjs.org/v8-android-jit-nointl/-/v8-android-jit-nointl-8.80.1.tgz',
-        'version':
-        '8.80.1',
-        'meta': ('JIT', 'V8 8.0.426.16'),
-        'aar_glob':
-        '**/*.aar',
-        'binary_name':
-        'libv8android.so',
-        'maven_dist_path':
-        'package/dist',
-        'intl':
-        False,
-    },
-    'hermes_041': {
-        'download_url':
-        'https://registry.npmjs.org/hermes-engine/-/hermes-engine-0.4.1.tgz',
-        'version':
-        '0.4.1',
-        'meta': ('JIT-less', 'bytecode precompile'),
-        'aar_glob':
-        '**/android/hermes-release.aar',
-        'binary_name':
-        'libhermes.so',
-        'maven_dist_path':
-        'package/android',
-        'intl':
-        False,
+    "hermes_0110": {
+        "download_url": "https://registry.npmjs.org/hermes-engine/-/hermes-engine-0.11.0.tgz",
+        "version": "0.11.0",
+        "meta": ("JIT-less", "bytecode AOT"),
+        "aar_glob": "**/android/hermes-release.aar",
+        "binary_name": "libhermes.so",
+        "maven_dist_path": "package/android",
+        "intl": True,
     },
 }

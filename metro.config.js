@@ -5,18 +5,16 @@
  * @format
  */
 
-const blacklist = require('metro-config/src/defaults/blacklist');
-
 module.exports = {
   transformer: {
     getTransformOptions: async () => ({
       transform: {
         experimentalImportSupport: false,
-        inlineRequires: false,
+        inlineRequires: true,
       },
     }),
   },
   resolver: {
-    blacklistRE: blacklist([/js_dist\/.*/]),
+    blockList: [/\/js_dist\//],
   },
 };
