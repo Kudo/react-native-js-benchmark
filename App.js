@@ -1,14 +1,15 @@
 /**
  * @format
- * @flow strict-local
  */
 
-import React, {useEffect, useState} from 'react';
-import {View, Text, Linking, StyleSheet} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Linking, StyleSheet } from 'react-native';
 import URL from 'url-parse';
 
 const ROUTES = {
-  '/RenderComponentThroughput': require('./src/ReactRender/RenderComponentThroughput')
+  '/RenderComponentThroughput':
+    require('./src/ReactRender/RenderComponentThroughput').default,
+  '/RenderComponentMemory': require('./src/ReactRender/RenderComponentMemory')
     .default,
   '/TTI': require('./src/TTI/TTIView').default,
 };
@@ -19,7 +20,7 @@ const NotFoundView = () => (
   </View>
 );
 
-const App: () => React$Node = () => {
+function App() {
   const [route, setRoute] = useState(null);
   useEffect(() => {
     async function setupInitialRoute() {
@@ -42,7 +43,7 @@ const App: () => React$Node = () => {
       )}
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {

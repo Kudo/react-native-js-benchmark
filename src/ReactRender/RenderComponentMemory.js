@@ -17,7 +17,7 @@ const Child = ({ id, onMount }) => {
   );
 };
 
-const RenderComponentThroughput = ({ interval }) => {
+const RenderComponentMemory = ({ totalCount }) => {
   const [children, setChildren] = useState([0]);
   const [shouldContinue, setShouldContinue] = useState(true);
   const latestChildren = useRef(children);
@@ -27,6 +27,11 @@ const RenderComponentThroughput = ({ interval }) => {
   }
 
   function handleChildDidMount(id) {
+    if (id >= totalCount) {
+      setShouldContinue(false);
+      console.log(`count=${latestChildren.current.length}`);
+      return;
+    }
     if (shouldContinue && id === children.length - 1) {
       appendChild(id + 1);
     }
@@ -35,15 +40,6 @@ const RenderComponentThroughput = ({ interval }) => {
   useEffect(() => {
     latestChildren.current = children;
   });
-
-  useEffect(() => {
-    // eslint-disable-next-line no-bitwise
-    const intervalInt = interval | 0;
-    setTimeout(() => {
-      setShouldContinue(false);
-      console.log(`count=${latestChildren.current.length}`);
-    }, intervalInt);
-  }, [interval]);
 
   return (
     <ScrollView style={styles.scrollView}>
@@ -70,4 +66,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default RenderComponentThroughput;
+export default RenderComponentMemory;

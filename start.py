@@ -49,6 +49,38 @@ class RenderComponentThroughput:
         return ret
 
 
+class RenderComponentMemory:
+    def __init__(self, app_id, total_count):
+        self._app_id = app_id
+        self._total_count = total_count
+
+    def run(self):
+        AdbTool.stop_apps()
+        AdbTool.clear_log()
+        AdbTool.start_with_link(
+            self._app_id,
+            "/RenderComponentMemory?totalCount={}".format(self._total_count),
+        )
+        result = AdbTool.wait_for_console_log(r"count=(\d+)").group(1)
+        memory = AdbTool.get_memory(self._app_id)
+        return (int(result), int(memory))
+
+    def run_with_average(self, times):
+        ret = {
+            "result": 0,
+            "memory": 0,
+        }
+        for _ in range(times):
+            (result, memory) = self.run()
+            ret["result"] += result
+            ret["memory"] += memory
+
+        # NOTE(kudo): Keeps thing simpler to trim as integer
+        ret["result"] = int(ret["result"] / times)
+        ret["memory"] = int(ret["memory"] / times)
+        return ret
+
+
 class TTI:
     def __init__(self, app_id, size):
         self._app_id = app_id
@@ -60,7 +92,7 @@ class TTI:
             ApkTool.reinstall(**apk_install_kwargs)
             result = self._run_batch_with_average(3)
             logger.info(
-                "{app} tti={tti}, assets_size={assets_size} MiB".format(
+                "{app} ti={tti}, assets_size={assets_size} MiB".format(
                     app=self._app_id,
                     tti=result["tti"],
                     assets_size=result["assets_size"],
@@ -250,7 +282,7 @@ def parse_args():
     arg_parser.add_argument(
         "suites",
         nargs="*",
-        help="Benchmark suites to run - supported arguments: RenderComponentThroughput, TTI, ApkSize",
+        help="Benchmark suites to run - supported arguments: RenderComponentThroughput, RenderComponentMemory, TTI, ApkSize",
     )
 
     args = arg_parser.parse_args()
@@ -311,6 +343,53 @@ class RenderComponentThroughputSuite:
         )
 
 
+class RenderComponentMemorySuite:
+    def run(
+        self, jsc_apk_install_kwargs, v8_apk_install_kwargs, hermes_apk_install_kwargs
+    ):
+        logger.info(h1("RenderComponentMemory Suite"))
+        ApkTool.reinstall(**jsc_apk_install_kwargs)
+        ApkTool.reinstall(**v8_apk_install_kwargs)
+        ApkTool.reinstall(**hermes_apk_install_kwargs)
+
+        logger.info(h2("RenderComponentMemory 100 items"))
+        logger.info(
+            "jsc {}".format(RenderComponentMemory("jsc", 100).run_with_average(3))
+        )
+        logger.info(
+            "v8 {}".format(RenderComponentMemory("v8", 100).run_with_average(3))
+        )
+        logger.info(
+            "hermes {}".format(RenderComponentMemory("hermes", 100).run_with_average(3))
+        )
+
+        logger.info(h2("RenderComponentMemory 1000 items"))
+        logger.info(
+            "jsc {}".format(RenderComponentMemory("jsc", 1000).run_with_average(3))
+        )
+        logger.info(
+            "v8 {}".format(RenderComponentMemory("v8", 1000).run_with_average(3))
+        )
+        logger.info(
+            "hermes {}".format(
+                RenderComponentMemory("hermes", 1000).run_with_average(3)
+            )
+        )
+
+        logger.info(h2("RenderComponentMemory 3000 items"))
+        logger.info(
+            "jsc {}".format(RenderComponentMemory("jsc", 3000).run_with_average(3))
+        )
+        logger.info(
+            "v8 {}".format(RenderComponentMemory("v8", 3000).run_with_average(3))
+        )
+        logger.info(
+            "hermes {}".format(
+                RenderComponentMemory("hermes", 3000).run_with_average(3)
+            )
+        )
+
+
 class TTISuite:
     def run(
         self, jsc_apk_install_kwargs, v8_apk_install_kwargs, hermes_apk_install_kwargs
@@ -362,6 +441,8 @@ def main():
     suites = []
     if args.all or "RenderComponentThroughput" in args.suites:
         suites.append(RenderComponentThroughputSuite())
+    if args.all or "RenderComponentMemory" in args.suites:
+        suites.append(RenderComponentMemorySuite())
     if args.all or "TTI" in args.suites:
         suites.append(TTISuite())
     if args.all or "ApkSize" in args.suites:
