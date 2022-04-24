@@ -4,6 +4,7 @@ import os
 import re
 import shlex
 import subprocess
+from pathlib import Path
 from .logger import get_logger
 
 logger = get_logger(__name__)
@@ -140,3 +141,10 @@ class ApkTool:
         stderr = subprocess.DEVNULL if not verbose else None
         subprocess.run(shlex.split(cmd), stdout=stdout, stderr=stderr)
         os.chdir("../")
+
+    @classmethod
+    def get_assets_size(cls, app_id):
+        assets_dir = Path(
+            "android/{}/build/intermediates/merged_assets/release/out".format(app_id)
+        )
+        return sum(f.stat().st_size for f in assets_dir.glob("**/*") if f.is_file())

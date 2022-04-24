@@ -11,6 +11,7 @@ from lib.logger import get_logger, setup_logger
 from lib.section import h1, h2
 from lib.tools import AdbTool, ApkTool
 
+
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 logger = get_logger(__name__)
@@ -58,7 +59,13 @@ class TTI:
         with self.PatchBundleContext(data_file_path, self._size):
             ApkTool.reinstall(**apk_install_kwargs)
             result = self._run_batch_with_average(3)
-            logger.info("{app} {result}".format(app=self._app_id, result=result))
+            logger.info(
+                "{app} tti={tti}, assets_size={assets_size} MiB".format(
+                    app=self._app_id,
+                    tti=result["tti"],
+                    assets_size=result["assets_size"],
+                )
+            )
 
     class PatchBundleContext:
         def __init__(self, data_file_path, size):
@@ -100,10 +107,15 @@ class TTI:
         return self._wait_for_tti_log()
 
     def _run_batch_with_average(self, times):
-        result = 0
+        result = {
+            "tti": 0,
+            "assets_size": 0,
+        }
         for _ in range(times):
-            result += self._run_batch()
-        result = int(result / times)
+            result["tti"] += self._run_batch()
+            result["assets_size"] += ApkTool.get_assets_size(self._app_id)
+        result["tti"] = int(result["tti"] / times)
+        result["assets_size"] = round((result["assets_size"] / times) / 1024 / 1024, 2)
         return result
 
 
