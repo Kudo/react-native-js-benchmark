@@ -6659,6 +6659,11 @@ v8-android-jit@^9.93.0:
   resolved "https://registry.yarnpkg.com/v8-android-jit/-/v8-android-jit-9.93.0.tgz#2e52d3878da97647959991cefc5b90e47449f51a"
   integrity sha512-qSEnxj/7x2lqvAjRtdox0fx20J5ekcLg/O1/M4vNKUtbWG75+/ACspP3n0KD0RIYLhD8F2iGxERRbwu9FbjKRg==
 
+v8-android-tools-macos@^10.100.0:
+  version "10.100.0"
+  resolved "https://registry.yarnpkg.com/v8-android-tools-macos/-/v8-android-tools-macos-10.100.0.tgz#d97d60e69b3d4dac90bf7f1b405432fd02a83392"
+  integrity sha512-sbzpw482S/nD0xd7PPJ6THr3uBJPRE2LNLhXv9N2Uu5avYWEHYjfn9lDzHnuR5iu9FGzh3oLcO+f/eDI6T6aHw==
+
 v8-compile-cache@^2.0.3:
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/v8-compile-cache/-/v8-compile-cache-2.3.0.tgz#2de19618c66dc247dcfb6f99338035d8245a2cee"

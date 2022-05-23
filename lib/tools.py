@@ -6,6 +6,7 @@ import shlex
 import subprocess
 from pathlib import Path
 from .logger import get_logger
+from .types import InstallProps
 
 logger = get_logger(__name__)
 
@@ -131,7 +132,8 @@ class ApkTool:
             gradle_prop += " --project-prop ABI_BASED_APK=true"
         if extra_gradle_props:
             gradle_prop += " "
-            gradle_prop += "--project-prop {}".join(extra_gradle_props)
+            prefixed_props = ("--project-prop " + p for p in extra_gradle_props)
+            gradle_prop += " ".join(prefixed_props)
         cmd = "./gradlew {gradle_prop} \
 :{app}:clean :{app}:uninstallRelease :{app}:installRelease".format(
             gradle_prop=gradle_prop, app=app_id

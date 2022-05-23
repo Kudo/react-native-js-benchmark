@@ -14,25 +14,33 @@ import type { ChartData } from '../types';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const COLOR_BUCKETS = {
-  jsc: '#ffca3a',
-  v8: '#8ac926',
-  hermes: '#1982c4',
+const COLOR_PALETTE = {
+  jsc: ['#ffca3a', '#ffa33a', '#ffb03a', '#ffbd3a', '#ffd73a', '#ffe43a'],
+  v8: ['#8ac926', '#5e891a', '#ade05b', '#6d9e1e', '#a2dc46', '#7bb422'],
+  hermes: ['#1982c4', '#19a4c4', '#1999ca', '#198dc4', '#1971c4', '#1966c4'],
 };
 
+const COLOR_BUCKETS: Record<string, string> = {};
+
 function getBackgroundColor(jsEngine: string): string | undefined {
-  const randomAlpha = 'ff';
-  // const randomAlpha = Math.floor(Math.random() * 150 + 100).toString(16);
+  if (COLOR_BUCKETS[jsEngine] != null) {
+    return COLOR_BUCKETS[jsEngine];
+  }
+
+  let result: string | undefined = undefined;
   if (jsEngine.startsWith('jsc')) {
-    return `${COLOR_BUCKETS.jsc}${randomAlpha}`;
+    result = COLOR_PALETTE.jsc.pop();
+  } else if (jsEngine.startsWith('v8')) {
+    result = COLOR_PALETTE.v8.pop();
+  } else if (jsEngine.startsWith('hermes')) {
+    result = COLOR_PALETTE.hermes.pop();
   }
-  if (jsEngine.startsWith('v8')) {
-    return `${COLOR_BUCKETS.v8}${randomAlpha}`;
+  if (result === undefined) {
+    result = '#b726c9';
   }
-  if (jsEngine.startsWith('hermes')) {
-    return `${COLOR_BUCKETS.hermes}${randomAlpha}`;
-  }
-  return undefined;
+
+  COLOR_BUCKETS[jsEngine] = result;
+  return result;
 }
 
 export interface Props {
@@ -56,10 +64,10 @@ export default function ChartWithSection(props: Props) {
 
   const data = {
     labels: props.data.testGroups,
-    datasets: props.data.testGroups.map((_, i) => ({
-      label: props.data.dataSet[i].jsEngine,
-      data: props.data.dataSet[i].groupData,
-      backgroundColor: getBackgroundColor(props.data.dataSet[i].jsEngine),
+    datasets: props.data.dataSet.map((data) => ({
+      label: data.jsEngine,
+      data: data.groupData,
+      backgroundColor: getBackgroundColor(data.jsEngine),
     })),
   };
 

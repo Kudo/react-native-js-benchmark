@@ -8,14 +8,23 @@ JS_DISTS = {
         "maven_dist_path": "package/dist",
         "intl": False,
     },
-    "v8_93_jit": {
-        "download_url": "https://registry.npmjs.org/v8-android-jit/-/v8-android-jit-9.93.0.tgz",
-        "version": "9.93.0",
-        "meta": ("JIT", "V8 9.3.345.16"),
+    "v8_100_jit": {
+        "download_url": "https://registry.npmjs.org/v8-android-jit/-/v8-android-jit-10.100.0.tgz",
+        "version": "10.100.0",
+        "meta": ("JIT", "V8 10.0.139.9"),
         "aar_glob": "**/*.aar",
         "binary_name": "libv8android.so",
         "maven_dist_path": "package/dist",
         "intl": True,
+    },
+    "v8_100_nointl": {
+        "download_url": "https://registry.npmjs.org/v8-android-nointl/-/v8-android-nointl-10.100.0.tgz",
+        "version": "10.100.0",
+        "meta": ("V8 Light mode", "V8 10.0.139.9"),
+        "aar_glob": "**/*.aar",
+        "binary_name": "libv8android.so",
+        "maven_dist_path": "package/dist",
+        "intl": False,
     },
     "hermes_0110": {
         "download_url": "https://registry.npmjs.org/hermes-engine/-/hermes-engine-0.11.0.tgz",

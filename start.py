@@ -1,15 +1,18 @@
 #!/usr/bin/env python
 import argparse
+from gettext import install
 import glob
 import json
 import os
 import sys
 import tempfile
+import typing
 from js_dists import JS_DISTS
 from lib.colorful import colorful
 from lib.logger import get_logger, setup_logger
 from lib.section import h1, h2
 from lib.tools import AdbTool, ApkTool
+from lib.types import InstallProps
 
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -18,7 +21,8 @@ logger = get_logger(__name__)
 
 
 class RenderComponentThroughput:
-    def __init__(self, app_id, interval):
+    def __init__(self, name, app_id, interval):
+        self._name = name
         self._app_id = app_id
         self._interval = interval
 
@@ -50,7 +54,8 @@ class RenderComponentThroughput:
 
 
 class RenderComponentMemory:
-    def __init__(self, app_id, total_count):
+    def __init__(self, name, app_id, total_count):
+        self._name = name
         self._app_id = app_id
         self._total_count = total_count
 
@@ -82,7 +87,8 @@ class RenderComponentMemory:
 
 
 class TTI:
-    def __init__(self, app_id, size):
+    def __init__(self, name, app_id, size):
+        self._name = name
         self._app_id = app_id
         self._size = size
 
@@ -92,8 +98,8 @@ class TTI:
             ApkTool.reinstall(**apk_install_kwargs)
             result = self._run_batch_with_average(3)
             logger.info(
-                "{app} ti={tti}, assets_size={assets_size} MiB".format(
-                    app=self._app_id,
+                "{app} tti={tti}, assets_size={assets_size} MiB".format(
+                    app=self._name,
                     tti=result["tti"],
                     assets_size=result["assets_size"],
                 )
@@ -154,9 +160,13 @@ class TTI:
 class JSDistManager:
     STORE_DIST_DIR = os.path.join(ROOT_DIR, "js_dist")
 
-    def __init__(self, dist_id):
-        self._dist_id = dist_id
-        self._dist_info = JS_DISTS[dist_id]
+    def __init__(self, **kwargs):
+        self.name = kwargs["name"]
+        self.app_id = kwargs["app_id"]
+        self._dist_id = kwargs["dist_id"]
+        self._dist_info = JS_DISTS[self._dist_id]
+        self._extra_gradle_props = kwargs.get("extra_gradle_props", [])
+        self.install_props: typing.Optional[InstallProps] = None
 
     def prepare(self):
         js_dist_path = os.path.join(self.STORE_DIST_DIR, self._dist_id)
@@ -166,6 +176,27 @@ class JSDistManager:
             os.system("mkdir -p {}".format(js_dist_path))
             self._download_dist(self._dist_info["download_url"], js_dist_path)
         return maven_dist_path
+
+    def create_install_props(self, abi: str, verbose: bool) -> InstallProps:
+        if self.install_props is not None:
+            return self.install_props
+
+        extra_gradle_props: list[str] = self._extra_gradle_props
+        if self.app_id == "v8":
+            extra_gradle_props.append(
+                "v8.android.dir={}".format(os.path.dirname(self.prepare()))
+            )
+        if self.info.get("intl"):
+            extra_gradle_props.append("INTL=true")
+
+        self.install_props = {
+            "app_id": self.app_id,
+            "abi": abi,
+            "verbose": verbose,
+            "maven_repo_prop": "MAVEN_REPO=" + self.prepare(),
+            "extra_gradle_props": extra_gradle_props,
+        }
+        return self.install_props
 
     def get_binary_size(self, abi):
         js_dist_path = os.path.join(self.STORE_DIST_DIR, self._dist_id)
@@ -227,44 +258,21 @@ class JSDistManager:
         os.system(cmd)
 
 
-def show_configs(abis, jsc_dist_manager, v8_dist_manager, hermes_dist_manager):
+def show_configs(abis, js_dist_managers: list[JSDistManager]):
     logger.info(h2("ABIs: {}".format(", ".join(abis))))
 
-    logger.info(
-        "JSC version: {}\nMeta: {}".format(
-            jsc_dist_manager.info["version"], ", ".join(jsc_dist_manager.info["meta"])
-        )
-    )
-    logger.info("Intl: {}".format(jsc_dist_manager.info["intl"]))
-    logger.info("JSC binary size:")
-    for abi in abis:
-        logger.info("\t{}: {} MiB".format(abi, jsc_dist_manager.get_binary_size(abi)))
-    logger.info("\n")
-
-    logger.info(
-        "V8 version: {}\nMeta: {}".format(
-            v8_dist_manager.info["version"], ", ".join(v8_dist_manager.info["meta"])
-        )
-    )
-    logger.info("Intl: {}".format(v8_dist_manager.info["intl"]))
-    logger.info("V8 binary size:")
-    for abi in abis:
-        logger.info("\t{}: {} MiB".format(abi, v8_dist_manager.get_binary_size(abi)))
-    logger.info("\n")
-
-    logger.info(
-        "Hermes version: {}\nMeta: {}".format(
-            hermes_dist_manager.info["version"],
-            ", ".join(hermes_dist_manager.info["meta"]),
-        )
-    )
-    logger.info("Intl: {}".format(hermes_dist_manager.info["intl"]))
-    logger.info("Hermes binary size:")
-    for abi in abis:
+    for dist in js_dist_managers:
+        logger.info("# {}\n".format(dist.name))
         logger.info(
-            "\t{}: {} MiB".format(abi, hermes_dist_manager.get_binary_size(abi))
+            "version: {}\nmeta: {}".format(
+                dist.info["version"], ", ".join(dist.info["meta"])
+            )
         )
-    logger.info("\n")
+        logger.info("Intl: {}".format(dist.info["intl"]))
+        logger.info("binary size:")
+        for abi in abis:
+            logger.info("\t{}: {} MiB".format(abi, dist.get_binary_size(abi)))
+        logger.info("\n")
 
 
 def parse_args():
@@ -293,145 +301,114 @@ def parse_args():
 
 
 class RenderComponentThroughputSuite:
-    def run(
-        self, jsc_apk_install_kwargs, v8_apk_install_kwargs, hermes_apk_install_kwargs
-    ):
+    def run(self, js_dist_managers: list[JSDistManager]):
         logger.info(h1("RenderComponentThroughput Suite"))
-        ApkTool.reinstall(**jsc_apk_install_kwargs)
-        ApkTool.reinstall(**v8_apk_install_kwargs)
-        ApkTool.reinstall(**hermes_apk_install_kwargs)
 
         logger.info(h2("RenderComponentThroughput 10s"))
-        logger.info(
-            "jsc {}".format(RenderComponentThroughput("jsc", 10000).run_with_average(3))
-        )
-        logger.info(
-            "v8 {}".format(RenderComponentThroughput("v8", 10000).run_with_average(3))
-        )
-        logger.info(
-            "hermes {}".format(
-                RenderComponentThroughput("hermes", 10000).run_with_average(3)
+        for dist in js_dist_managers:
+            ApkTool.reinstall(**dist.install_props)
+            logger.info(
+                "{} {}".format(
+                    dist.name,
+                    RenderComponentThroughput(
+                        dist.name, dist.app_id, 10000
+                    ).run_with_average(3),
+                )
             )
-        )
 
         logger.info(h2("RenderComponentThroughput 60s"))
-        logger.info(
-            "jsc {}".format(RenderComponentThroughput("jsc", 60000).run_with_average(3))
-        )
-        logger.info(
-            "v8 {}".format(RenderComponentThroughput("v8", 60000).run_with_average(3))
-        )
-        logger.info(
-            "hermes {}".format(
-                RenderComponentThroughput("hermes", 60000).run_with_average(3)
+        for dist in js_dist_managers:
+            ApkTool.reinstall(**dist.install_props)
+            logger.info(
+                "{} {}".format(
+                    dist.name,
+                    RenderComponentThroughput(
+                        dist.name, dist.app_id, 60000
+                    ).run_with_average(3),
+                )
             )
-        )
 
         logger.info(h2("RenderComponentThroughput 180s"))
-        logger.info(
-            "jsc {}".format(
-                RenderComponentThroughput("jsc", 180000).run_with_average(3)
+        for dist in js_dist_managers:
+            ApkTool.reinstall(**dist.install_props)
+            logger.info(
+                "{} {}".format(
+                    dist.name,
+                    RenderComponentThroughput(
+                        dist.name, dist.app_id, 180000
+                    ).run_with_average(3),
+                )
             )
-        )
-        logger.info(
-            "v8 {}".format(RenderComponentThroughput("v8", 180000).run_with_average(3))
-        )
-        logger.info(
-            "hermes {}".format(
-                RenderComponentThroughput("hermes", 180000).run_with_average(3)
-            )
-        )
 
 
 class RenderComponentMemorySuite:
-    def run(
-        self, jsc_apk_install_kwargs, v8_apk_install_kwargs, hermes_apk_install_kwargs
-    ):
+    def run(self, js_dist_managers: list[JSDistManager]):
         logger.info(h1("RenderComponentMemory Suite"))
-        ApkTool.reinstall(**jsc_apk_install_kwargs)
-        ApkTool.reinstall(**v8_apk_install_kwargs)
-        ApkTool.reinstall(**hermes_apk_install_kwargs)
 
         logger.info(h2("RenderComponentMemory 100 items"))
-        logger.info(
-            "jsc {}".format(RenderComponentMemory("jsc", 100).run_with_average(3))
-        )
-        logger.info(
-            "v8 {}".format(RenderComponentMemory("v8", 100).run_with_average(3))
-        )
-        logger.info(
-            "hermes {}".format(RenderComponentMemory("hermes", 100).run_with_average(3))
-        )
-
+        for dist in js_dist_managers:
+            ApkTool.reinstall(**dist.install_props)
+            logger.info(
+                "{} {}".format(
+                    dist.name,
+                    RenderComponentMemory(dist.name, dist.app_id, 100).run_with_average(
+                        3
+                    ),
+                )
+            )
         logger.info(h2("RenderComponentMemory 1000 items"))
-        logger.info(
-            "jsc {}".format(RenderComponentMemory("jsc", 1000).run_with_average(3))
-        )
-        logger.info(
-            "v8 {}".format(RenderComponentMemory("v8", 1000).run_with_average(3))
-        )
-        logger.info(
-            "hermes {}".format(
-                RenderComponentMemory("hermes", 1000).run_with_average(3)
+        for dist in js_dist_managers:
+            ApkTool.reinstall(**dist.install_props)
+            logger.info(
+                "{} {}".format(
+                    dist.name,
+                    RenderComponentMemory(
+                        dist.name, dist.app_id, 1000
+                    ).run_with_average(3),
+                )
             )
-        )
-
         logger.info(h2("RenderComponentMemory 3000 items"))
-        logger.info(
-            "jsc {}".format(RenderComponentMemory("jsc", 3000).run_with_average(3))
-        )
-        logger.info(
-            "v8 {}".format(RenderComponentMemory("v8", 3000).run_with_average(3))
-        )
-        logger.info(
-            "hermes {}".format(
-                RenderComponentMemory("hermes", 3000).run_with_average(3)
+        for dist in js_dist_managers:
+            ApkTool.reinstall(**dist.install_props)
+            logger.info(
+                "{} {}".format(
+                    dist.name,
+                    RenderComponentMemory(
+                        dist.name, dist.app_id, 3000
+                    ).run_with_average(3),
+                )
             )
-        )
 
 
 class TTISuite:
-    def run(
-        self, jsc_apk_install_kwargs, v8_apk_install_kwargs, hermes_apk_install_kwargs
-    ):
+    def run(self, js_dist_managers: list[JSDistManager]):
         logger.info(h1("TTI Suite"))
 
         logger.info(h2("TTI 3MiB"))
         size = 1024 * 1024 * 3
-        TTI("jsc", size).run(jsc_apk_install_kwargs)
-        TTI("v8", size).run(v8_apk_install_kwargs)
-        TTI("hermes", size).run(hermes_apk_install_kwargs)
+        for dist in js_dist_managers:
+            TTI(dist.name, dist.app_id, size).run(dist.install_props)
 
         logger.info(h2("TTI 10MiB"))
         size = 1024 * 1024 * 10
-        TTI("jsc", size).run(jsc_apk_install_kwargs)
-        TTI("v8", size).run(v8_apk_install_kwargs)
-        TTI("hermes", size).run(hermes_apk_install_kwargs)
+        for dist in js_dist_managers:
+            TTI(dist.name, dist.app_id, size).run(dist.install_props)
 
         logger.info(h2("TTI 15MiB"))
         size = 1024 * 1024 * 15
-        TTI("jsc", size).run(jsc_apk_install_kwargs)
-        TTI("v8", size).run(v8_apk_install_kwargs)
-        TTI("hermes", size).run(hermes_apk_install_kwargs)
+        for dist in js_dist_managers:
+            TTI(dist.name, dist.app_id, size).run(dist.install_props)
 
 
 class ApkSize:
-    def run(
-        self, jsc_apk_install_kwargs, v8_apk_install_kwargs, hermes_apk_install_kwargs
-    ):
+    def run(self, js_dist_managers: list[JSDistManager]):
         logger.info(h1("APK Size Suite"))
 
-        apk_file = ApkTool.build(**jsc_apk_install_kwargs)
-        size = round(float(os.path.getsize(apk_file)) / 1024 / 1024, 2)
-        logger.info("jsc {} MiB".format(size))
-
-        apk_file = ApkTool.build(**v8_apk_install_kwargs)
-        size = round(float(os.path.getsize(apk_file)) / 1024 / 1024, 2)
-        logger.info("v8 {} MiB".format(size))
-
-        apk_file = ApkTool.build(**hermes_apk_install_kwargs)
-        size = round(float(os.path.getsize(apk_file)) / 1024 / 1024, 2)
-        logger.info("hermes {} MiB".format(size))
+        for dist in js_dist_managers:
+            install_props = dist.install_props
+            apk_file = ApkTool.build(**install_props)
+            size = round(float(os.path.getsize(apk_file)) / 1024 / 1024, 2)
+            logger.info("{} {} MiB".format(dist.name, size))
 
 
 def main():
@@ -448,50 +425,58 @@ def main():
     if args.all or "ApkSize" in args.suites:
         suites.append(ApkSize())
 
-    #  abis = ('armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64')
-    abis = ("arm64-v8a",)
+    abis = ("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+    # abis = ("arm64-v8a",)
     apk_abi = abis[0] if len(abis) == 1 else None
 
-    jsc_dist_manager = JSDistManager("jsc_250230")
-    jsc_dist_manager.prepare()
-
-    v8_dist_manager = JSDistManager("v8_93_jit")
-    v8_dist_manager.prepare()
-
-    hermes_dist_manager = JSDistManager("hermes_0110")
-    hermes_dist_manager.prepare()
+    js_dist_managers = [
+        JSDistManager(name="jsc", app_id="jsc", dist_id="jsc_250230"),
+        JSDistManager(name="v8-android-jit", app_id="v8", dist_id="v8_100_jit"),
+        JSDistManager(name="v8-android-nointl", app_id="v8", dist_id="v8_100_nointl"),
+        # JSDistManager(
+        #     name="v8-android-jit + normal codecache",
+        #     app_id="v8",
+        #     dist_id="v8_100_jit",
+        #     extra_gradle_props=[
+        #         "v8.cacheMode=normal",
+        #     ],
+        # ),
+        # JSDistManager(
+        #     name="v8-android-jit + prebuilt cache",
+        #     app_id="v8",
+        #     dist_id="v8_100_jit",
+        #     extra_gradle_props=[
+        #         "v8.cacheMode=prebuilt",
+        #         # TODO: tools should be in js_dists for versioning
+        #         "v8.android.tools.dir={}".format(
+        #             os.path.join(
+        #                 ROOT_DIR,
+        #                 "node_modules",
+        #                 "v8-android-tools-macos",
+        #                 "v8-android-jit",
+        #             )
+        #         ),
+        #     ],
+        # ),
+        # JSDistManager(
+        #     name="v8-android-jit + cache with stub bundle",
+        #     app_id="v8",
+        #     dist_id="v8_100_jit",
+        #     extra_gradle_props=[
+        #         "v8.cacheMode=normalWithStubBundle",
+        #     ],
+        # ),
+        JSDistManager(name="hermes", app_id="hermes", dist_id="hermes_0110"),
+    ]
+    for dist in js_dist_managers:
+        dist.prepare()
+        dist.create_install_props(abi=apk_abi, verbose=args.verbose)
 
     logger.info(h1("Config"))
-    show_configs(abis, jsc_dist_manager, v8_dist_manager, hermes_dist_manager)
-
-    jsc_apk_install_kwargs = {
-        "app_id": "jsc",
-        "maven_repo_prop": "MAVEN_REPO=" + jsc_dist_manager.prepare(),
-        "abi": apk_abi,
-        "verbose": args.verbose,
-        "extra_gradle_props": ("INTL=true",)
-        if jsc_dist_manager.info.get("intl")
-        else None,
-    }
-
-    v8_apk_install_kwargs = {
-        "app_id": "v8",
-        "maven_repo_prop": "MAVEN_REPO=" + v8_dist_manager.prepare(),
-        "abi": apk_abi,
-        "verbose": args.verbose,
-    }
-
-    hermes_apk_install_kwargs = {
-        "app_id": "hermes",
-        "maven_repo_prop": "MAVEN_REPO=" + hermes_dist_manager.prepare(),
-        "abi": apk_abi,
-        "verbose": args.verbose,
-    }
+    show_configs(abis, js_dist_managers)
 
     for suite in suites:
-        suite.run(
-            jsc_apk_install_kwargs, v8_apk_install_kwargs, hermes_apk_install_kwargs
-        )
+        suite.run(js_dist_managers)
 
     return 0
 

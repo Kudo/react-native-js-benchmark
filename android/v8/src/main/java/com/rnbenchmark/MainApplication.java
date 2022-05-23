@@ -54,11 +54,22 @@ public class MainApplication extends Application implements
     }
 
     @Override
+    protected String getBundleAssetName() {
+      final String v8BundleAssetName = V8ExecutorFactory.getBundleAssetName(getApplicationContext(), getUseDeveloperSupport());
+      if (v8BundleAssetName != null) {
+        return v8BundleAssetName;
+      }
+      return super.getBundleAssetName();
+    }
+
+    @Override
     protected JavaScriptExecutorFactory getJavaScriptExecutorFactory() {
+
       return new V8ExecutorFactory(
-              getPackageName(),
-              AndroidInfoHelpers.getFriendlyDeviceName(),
-              getUseDeveloperSupport());
+          getApplicationContext(),
+          getPackageName(),
+          AndroidInfoHelpers.getFriendlyDeviceName(),
+          getUseDeveloperSupport());
     }
   };
 

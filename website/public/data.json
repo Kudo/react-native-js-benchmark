@@ -4,32 +4,41 @@
     "dataSet": [
       {
         "jsEngine": "jsc",
-        "groupData": [741, 1842, 3182]
+        "groupData": [612, 1776, 3130]
       },
       {
         "jsEngine": "v8-android-jit",
-        "groupData": [1281, 2883, 4587]
+        "groupData": [1057, 2794, 4638]
+      },
+      {
+        "jsEngine": "v8-android-nointl",
+        "groupData": [470, 1338, 2209]
       },
       {
         "jsEngine": "hermes",
-        "groupData": [465, 1074, 1868]
+        "groupData": [419, 1105, 1915]
       }
     ]
   },
+
   "RenderComponentMemory": {
     "testGroups": ["100 items", "1000 items", "3000 items"],
     "dataSet": [
       {
         "jsEngine": "jsc",
-        "groupData": [113367, 258664, 295294]
+        "groupData": [108856, 253693, 289987]
       },
       {
         "jsEngine": "v8-android-jit",
-        "groupData": [115423, 252818, 342301]
+        "groupData": [123676, 172950, 323242]
+      },
+      {
+        "jsEngine": "v8-android-nointl",
+        "groupData": [114076, 167940, 256979]
       },
       {
         "jsEngine": "hermes",
-        "groupData": [97894, 152708, 262522]
+        "groupData": [93594, 148041, 263733]
       }
     ]
   },
@@ -39,15 +48,53 @@
     "dataSet": [
       {
         "jsEngine": "jsc",
-        "groupData": [156, 230, 311]
+        "groupData": [125, 201, 295]
       },
       {
         "jsEngine": "v8-android-jit",
-        "groupData": [126, 219, 312]
+        "groupData": [130, 193, 271]
+      },
+      {
+        "jsEngine": "v8-android-nointl",
+        "groupData": [135, 194, 248]
+      },
+      {
+        "jsEngine": "v8-android-jit + normal cache",
+        "groupData": [99, 145, 205]
+      },
+      {
+        "jsEngine": "v8-android-jit + prebuilt cache",
+        "groupData": [82, 121, 144]
+      },
+      {
+        "jsEngine": "v8-android-jit + normal with stub cache",
+        "groupData": [89, 138, 156]
       },
       {
         "jsEngine": "hermes",
-        "groupData": [77, 101, 140]
+        "groupData": [72, 113, 151]
+      }
+    ]
+  },
+
+  "ApkSize": {
+    "testGroups": ["universal build (MB)"],
+    "dataSet": [
+      {
+        "jsEngine": "jsc",
+        "groupData": [26.68]
+      },
+      {
+        "jsEngine": "v8-android-jit",
+        "groupData": [50.71]
+      },
+      {
+        "jsEngine": "v8-android-nointl",
+        "groupData": [34.46]
+      },
+      {
+        "jsEngine": "hermes",
+        "groupData": [20.19]
       }
     ]
   }

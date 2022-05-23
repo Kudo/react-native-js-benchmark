@@ -58,9 +58,15 @@ const Home: NextPage = () => {
               </a>
             </li>
             <li>
-              v8:{' '}
-              <a href="https://www.npmjs.com/package/v8-android-jit/v/9.93.0">
-                v8-android-jit@9.93.0
+              v8-android-jit:{' '}
+              <a href="https://www.npmjs.com/package/v8-android-jit/v/10.100.0">
+                v8-android-jit@10.100.0
+              </a>
+            </li>
+            <li>
+              v8-android-nointl:{' '}
+              <a href="https://www.npmjs.com/package/v8-android-nointl/v/9.93.0">
+                v8-android-nointl@10.100.0
               </a>
             </li>
             <li>
@@ -81,10 +87,27 @@ const Home: NextPage = () => {
         <hr className={styles.divider} />
 
         <Section
+          name="RenderComponentMemory"
+          description="Aims at the memory usage"
+          chartData={Data.RenderComponentMemory}
+        />
+
+        <hr className={styles.divider} />
+
+        <Section
           name="TTI"
           description="Aims at the app startup Time-To-Interactive (lower is better)"
           chartData={Data.TTI}
         />
+
+        <hr className={styles.divider} />
+
+        <Section
+          name="ApkSize"
+          description="Aims at apk size (lower is better)"
+          chartData={Data.ApkSize}
+        />
+
       </main>
     </div>
   );
